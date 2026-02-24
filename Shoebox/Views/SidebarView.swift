@@ -77,6 +77,11 @@ struct SidebarView: View {
                             }
                         }
                 }
+                .onMove { source, destination in
+                    withAnimation {
+                        collectionManager.moveCollection(fromOffsets: source, toOffset: destination)
+                    }
+                }
             } header: {
                 Text("Collections")
                     .font(.subheadline)

@@ -130,6 +130,11 @@ class CollectionManager: ObservableObject {
         saveCollections()
     }
 
+    func moveCollection(fromOffsets source: IndexSet, toOffset destination: Int) {
+        collections.move(fromOffsets: source, toOffset: destination)
+        saveCollections()
+    }
+
     func removeCollection(_ collection: PhotoCollection) {
         collections.removeAll { $0.id == collection.id }
         if selectedCollectionID == collection.id {
