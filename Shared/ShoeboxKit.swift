@@ -23,6 +23,7 @@ enum ShoeboxKit {
     static let thumbnailsDirectoryName = "WidgetThumbnails"
     static let focusPointsManifestName = "focus_points.json"
     static let favoritesKey = "favoritePhotos"
+    static let lockPasswordHashKey = "lockPasswordHash"
     static let favoritesCollectionID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
 
     static let imageExtensions: Set<String> = [

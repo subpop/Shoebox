@@ -22,6 +22,7 @@ struct PhotoCollection: Identifiable, Codable, Hashable {
     var dateAdded: Date
     var photoCount: Int
     var recurseSubdirectories: Bool
+    var isPasswordProtected: Bool
 
     init(
         id: UUID = UUID(),
@@ -29,7 +30,8 @@ struct PhotoCollection: Identifiable, Codable, Hashable {
         path: String,
         bookmarkData: Data? = nil,
         photoCount: Int = 0,
-        recurseSubdirectories: Bool = false
+        recurseSubdirectories: Bool = false,
+        isPasswordProtected: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -38,5 +40,6 @@ struct PhotoCollection: Identifiable, Codable, Hashable {
         self.dateAdded = Date()
         self.photoCount = photoCount
         self.recurseSubdirectories = recurseSubdirectories
+        self.isPasswordProtected = isPasswordProtected
     }
 }

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import CryptoKit
 import Foundation
 import SwiftUI
 import WidgetKit
@@ -23,6 +24,7 @@ class CollectionManager: ObservableObject {
     @Published var selectedCollectionID: UUID? {
         didSet { saveSelectedCollectionID() }
     }
+    @Published private(set) var isUnlocked = false
     private let defaults: UserDefaults
     private var accessedURL: URL?
     private var accessedURLs: [URL] = []
@@ -33,6 +35,61 @@ class CollectionManager: ObservableObject {
 
     var isFavoritesSelected: Bool {
         selectedCollectionID == Self.favoritesCollectionID
+    }
+
+    // MARK: - Global Lock
+
+    var hasPassword: Bool {
+        defaults.string(forKey: ShoeboxKit.lockPasswordHashKey) != nil
+    }
+
+    var isLocked: Bool {
+        hasPassword && !isUnlocked
+    }
+
+    var isSelectedCollectionLocked: Bool {
+        guard hasPassword, !isUnlocked else { return false }
+        if let collection = selectedCollection {
+            return collection.isPasswordProtected
+        }
+        return false
+    }
+
+    func setPassword(_ password: String) {
+        defaults.set(Self.hashPassword(password), forKey: ShoeboxKit.lockPasswordHashKey)
+        isUnlocked = true
+    }
+
+    func removePassword(verifying password: String) -> Bool {
+        guard verifyPassword(password) else { return false }
+        defaults.removeObject(forKey: ShoeboxKit.lockPasswordHashKey)
+        for idx in collections.indices {
+            collections[idx].isPasswordProtected = false
+        }
+        saveCollections()
+        isUnlocked = false
+        return true
+    }
+
+    func unlock(password: String) -> Bool {
+        guard verifyPassword(password) else { return false }
+        isUnlocked = true
+        return true
+    }
+
+    func lock() {
+        guard hasPassword else { return }
+        isUnlocked = false
+    }
+
+    private func verifyPassword(_ password: String) -> Bool {
+        guard let stored = defaults.string(forKey: ShoeboxKit.lockPasswordHashKey) else { return true }
+        return Self.hashPassword(password) == stored
+    }
+
+    static func hashPassword(_ password: String) -> String {
+        let data = Data(password.utf8)
+        return SHA256.hash(data: data).compactMap { String(format: "%02x", $0) }.joined()
     }
 
     init() {
@@ -120,12 +177,21 @@ class CollectionManager: ObservableObject {
     /// Start security-scoped access to all collections at once (used for Favorites).
     /// Returns each collection's resolved URL paired with its `recurseSubdirectories` flag.
     func startAccessingAll() -> [(url: URL, recursive: Bool)] {
+        startAccessing(collections: collections)
+    }
+
+    /// Like `startAccessingAll()` but skips password-protected collections.
+    func startAccessingUnprotected() -> [(url: URL, recursive: Bool)] {
+        startAccessing(collections: collections.filter { !$0.isPasswordProtected })
+    }
+
+    private func startAccessing(collections subset: [PhotoCollection]) -> [(url: URL, recursive: Bool)] {
         accessedURL?.stopAccessingSecurityScopedResource()
         accessedURL = nil
         stopAccessingAll()
 
         var results: [(url: URL, recursive: Bool)] = []
-        for collection in collections {
+        for collection in subset {
             guard let url = resolveURL(for: collection) else { continue }
             if url.startAccessingSecurityScopedResource() {
                 accessedURLs.append(url)

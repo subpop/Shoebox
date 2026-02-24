@@ -12,6 +12,7 @@ A native macOS photo browser built with SwiftUI. Add local folders as "collectio
 - Full-screen photo detail view
 - Slideshow mode
 - macOS desktop widget with smart cropping (face detection + saliency)
+- Password-protect individual collections
 
 ## Requirements
 
@@ -43,6 +44,7 @@ Shoebox/
 │   │   ├── EmptyStateView.swift
 │   │   ├── FavoriteButton.swift
 │   │   ├── GlassCircleButton.swift
+│   │   ├── LockedCollectionView.swift
 │   │   ├── PhotoDetailView.swift
 │   │   ├── PhotoGridView.swift
 │   │   ├── ShareButton.swift

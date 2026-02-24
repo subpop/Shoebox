@@ -34,6 +34,9 @@ struct ContentView: View {
     @State private var indexingTask: Task<Void, Never>?
     @State private var similaritySourceID: String?
     @State private var similarityResults: [String] = []
+    @State private var showSetPasswordSheet = false
+    @State private var showRemovePasswordSheet = false
+    @State private var showUnlockSheet = false
 
     var filteredPhotos: [PhotoItem] {
         if similaritySourceID != nil {
@@ -58,7 +61,9 @@ struct ContentView: View {
             NavigationSplitView(columnVisibility: $columnVisibility) {
                 SidebarView()
             } detail: {
-                if collectionManager.isFavoritesSelected || collectionManager.selectedCollection != nil {
+                if collectionManager.isSelectedCollectionLocked {
+                    LockedCollectionView()
+                } else if collectionManager.isFavoritesSelected || collectionManager.selectedCollection != nil {
                     PhotoGridView(
                         photos: filteredPhotos,
                         isLoading: photoLoader.isLoading,
@@ -74,7 +79,11 @@ struct ContentView: View {
             }
             .navigationTitle(collectionManager.isFavoritesSelected ? "Favorites" : collectionManager.selectedCollection?.name ?? "Shoebox")
             .toolbar {
-                if selectedPhoto == nil, !showingSlideshow, !filteredPhotos.isEmpty {
+                ToolbarItem {
+                    lockToolbarButton
+                }
+
+                if selectedPhoto == nil, !showingSlideshow, !collectionManager.isSelectedCollectionLocked, !filteredPhotos.isEmpty {
                     ToolbarItem {
                         Button {
                             detailPhotoID = filteredPhotos.first?.id
@@ -184,8 +193,57 @@ struct ContentView: View {
                 }
             }
         }
+        .onChange(of: collectionManager.isUnlocked) { _, _ in
+            loadSelectedCollection()
+        }
+        .sheet(isPresented: $showSetPasswordSheet) {
+            SetPasswordSheet { password in
+                collectionManager.setPassword(password)
+            }
+        }
+        .sheet(isPresented: $showRemovePasswordSheet) {
+            RemovePasswordSheet()
+        }
+        .sheet(isPresented: $showUnlockSheet) {
+            UnlockSheet()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .openFolder)) { _ in
             openFolder()
+        }
+    }
+
+    // MARK: - Lock Toolbar Button
+
+    @ViewBuilder
+    private var lockToolbarButton: some View {
+        if collectionManager.hasPassword && collectionManager.isLocked {
+            Button {
+                showUnlockSheet = true
+            } label: {
+                Label("Unlock", systemImage: "lock.fill")
+            }
+            .help("Unlock")
+        } else if collectionManager.hasPassword {
+            Button {
+                collectionManager.lock()
+            } label: {
+                Label("Lock", systemImage: "lock.open")
+            }
+            .help("Lock")
+            .contextMenu {
+                Button(role: .destructive) {
+                    showRemovePasswordSheet = true
+                } label: {
+                    Label("Remove Password", systemImage: "lock.slash")
+                }
+            }
+        } else {
+            Button {
+                showSetPasswordSheet = true
+            } label: {
+                Label("Set Password", systemImage: "lock.open")
+            }
+            .help("Set Password")
         }
     }
 
@@ -202,9 +260,19 @@ struct ContentView: View {
             return
         }
 
-        guard let collection = collectionManager.collections.first(where: { $0.id == id }),
-              let url = collectionManager.startAccessing(collection: collection)
-        else {
+        guard let collection = collectionManager.collections.first(where: { $0.id == id }) else {
+            folderWatcher?.stop()
+            photoLoader.clear()
+            return
+        }
+
+        if collection.isPasswordProtected && collectionManager.isLocked {
+            folderWatcher?.stop()
+            photoLoader.clear()
+            return
+        }
+
+        guard let url = collectionManager.startAccessing(collection: collection) else {
             folderWatcher?.stop()
             photoLoader.clear()
             return
@@ -214,7 +282,9 @@ struct ContentView: View {
     }
 
     private func loadFavorites() {
-        let sources = collectionManager.startAccessingAll()
+        let sources = collectionManager.isLocked
+            ? collectionManager.startAccessingUnprotected()
+            : collectionManager.startAccessingAll()
         photoLoader.loadFavorites(from: sources, matching: favoritesManager.favoriteIDs)
     }
 

@@ -23,11 +23,20 @@ struct CollectionSettingsView: View {
             Section {
                 Toggle("Include subfolders", isOn: $collection.recurseSubdirectories)
             }
+
+            if collectionManager.hasPassword {
+                Section {
+                    Toggle("Password protected", isOn: $collection.isPasswordProtected)
+                }
+            }
         }
         .formStyle(.grouped)
         .frame(width: 280)
         .fixedSize()
         .onChange(of: collection.recurseSubdirectories) { _, _ in
+            collectionManager.updateCollection(collection)
+        }
+        .onChange(of: collection.isPasswordProtected) { _, _ in
             collectionManager.updateCollection(collection)
         }
     }

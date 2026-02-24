@@ -30,7 +30,13 @@ struct SidebarView: View {
 
             Section {
                 ForEach(collectionManager.collections) { collection in
-                    SidebarRow(icon: "folder.fill", iconColor: .accentColor, title: collection.name, count: collection.photoCount)
+                    SidebarRow(
+                        icon: "folder.fill",
+                        iconColor: .accentColor,
+                        title: collection.name,
+                        count: collection.photoCount,
+                        isLocked: collection.isPasswordProtected && collectionManager.isLocked
+                    )
                         .tag(collection.id)
                         .popover(
                             isPresented: Binding(
@@ -142,6 +148,7 @@ struct SidebarRow: View {
     let iconColor: Color
     let title: String
     let count: Int
+    var isLocked: Bool = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -161,6 +168,12 @@ struct SidebarRow: View {
             }
 
             Spacer()
+
+            if isLocked {
+                Image(systemName: "lock.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.vertical, 4)
     }
