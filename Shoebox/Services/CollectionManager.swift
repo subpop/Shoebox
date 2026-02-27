@@ -14,8 +14,14 @@
 
 import CryptoKit
 import Foundation
+import LocalAuthentication
 import SwiftUI
 import WidgetKit
+
+enum LockMethod: String {
+    case loginPassword
+    case customPassword
+}
 
 class CollectionManager: ObservableObject {
     static let favoritesCollectionID = ShoeboxKit.favoritesCollectionID
@@ -25,6 +31,7 @@ class CollectionManager: ObservableObject {
         didSet { saveSelectedCollectionID() }
     }
     @Published private(set) var isUnlocked = false
+    @Published private(set) var lockMethod: LockMethod = .loginPassword
     private let defaults: UserDefaults
     private var accessedURL: URL?
     private var accessedURLs: [URL] = []
@@ -37,38 +44,39 @@ class CollectionManager: ObservableObject {
         selectedCollectionID == Self.favoritesCollectionID
     }
 
-    // MARK: - Global Lock
+    // MARK: - Lock
 
-    var hasPassword: Bool {
+    var hasCustomPassword: Bool {
         defaults.string(forKey: ShoeboxKit.lockPasswordHashKey) != nil
     }
 
+    var hasAnyLockedCollections: Bool {
+        collections.contains { $0.isPasswordProtected }
+    }
+
     var isLocked: Bool {
-        hasPassword && !isUnlocked
+        hasAnyLockedCollections && !isUnlocked
     }
 
-    var isSelectedCollectionLocked: Bool {
-        guard hasPassword, !isUnlocked else { return false }
-        if let collection = selectedCollection {
-            return collection.isPasswordProtected
+    var isSelectedCollectionPasswordProtected: Bool {
+        return selectedCollection?.isPasswordProtected ?? false
+    }
+
+    func setLockMethod(_ method: LockMethod) {
+        lockMethod = method
+        defaults.set(method.rawValue, forKey: ShoeboxKit.lockMethodKey)
+        if method == .loginPassword {
+            clearCustomPassword()
         }
-        return false
     }
 
-    func setPassword(_ password: String) {
+    func clearCustomPassword() {
+        defaults.removeObject(forKey: ShoeboxKit.lockPasswordHashKey)
+    }
+
+    func setCustomPassword(_ password: String) {
         defaults.set(Self.hashPassword(password), forKey: ShoeboxKit.lockPasswordHashKey)
         isUnlocked = true
-    }
-
-    func removePassword(verifying password: String) -> Bool {
-        guard verifyPassword(password) else { return false }
-        defaults.removeObject(forKey: ShoeboxKit.lockPasswordHashKey)
-        for idx in collections.indices {
-            collections[idx].isPasswordProtected = false
-        }
-        saveCollections()
-        isUnlocked = false
-        return true
     }
 
     func unlock(password: String) -> Bool {
@@ -78,12 +86,39 @@ class CollectionManager: ObservableObject {
     }
 
     func lock() {
-        guard hasPassword else { return }
+        guard hasAnyLockedCollections else { return }
         isUnlocked = false
     }
 
+    func authenticateWithLoginPassword(completion: @escaping (Bool) -> Void) {
+        let context = LAContext()
+        context.evaluatePolicy(
+            .deviceOwnerAuthentication,
+            localizedReason: "Unlock your collections"
+        ) { success, _ in
+            DispatchQueue.main.async {
+                if success { self.isUnlocked = true }
+                completion(success)
+            }
+        }
+    }
+
+    func addLockToSelectedCollection() {
+        guard let id = selectedCollectionID,
+              let idx = collections.firstIndex(where: { $0.id == id }) else { return }
+        collections[idx].isPasswordProtected = true
+        saveCollections()
+    }
+
+    func removeLockFromSelectedCollection() {
+        guard let id = selectedCollectionID,
+              let idx = collections.firstIndex(where: { $0.id == id }) else { return }
+        collections[idx].isPasswordProtected = false
+        saveCollections()
+    }
+
     private func verifyPassword(_ password: String) -> Bool {
-        guard let stored = defaults.string(forKey: ShoeboxKit.lockPasswordHashKey) else { return true }
+        guard let stored = defaults.string(forKey: ShoeboxKit.lockPasswordHashKey) else { return false }
         return Self.hashPassword(password) == stored
     }
 
@@ -94,6 +129,13 @@ class CollectionManager: ObservableObject {
 
     init() {
         self.defaults = ShoeboxKit.sharedDefaults
+
+        if let raw = defaults.string(forKey: ShoeboxKit.lockMethodKey),
+           let method = LockMethod(rawValue: raw) {
+            lockMethod = method
+        } else if defaults.string(forKey: ShoeboxKit.lockPasswordHashKey) != nil {
+            lockMethod = .customPassword
+        }
         loadCollections()
     }
 

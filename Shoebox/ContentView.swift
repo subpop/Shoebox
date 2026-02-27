@@ -34,9 +34,8 @@ struct ContentView: View {
     @State private var indexingTask: Task<Void, Never>?
     @State private var similaritySourceID: String?
     @State private var similarityResults: [String] = []
-    @State private var showSetPasswordSheet = false
-    @State private var showRemovePasswordSheet = false
     @State private var showUnlockSheet = false
+    @State private var pendingRemoveLock = false
 
     var filteredPhotos: [PhotoItem] {
         if similaritySourceID != nil {
@@ -61,7 +60,7 @@ struct ContentView: View {
             NavigationSplitView(columnVisibility: $columnVisibility) {
                 SidebarView()
             } detail: {
-                if collectionManager.isSelectedCollectionLocked {
+                if collectionManager.isSelectedCollectionPasswordProtected && collectionManager.isLocked {
                     LockedCollectionView()
                 } else if collectionManager.isFavoritesSelected || collectionManager.selectedCollection != nil {
                     PhotoGridView(
@@ -80,10 +79,14 @@ struct ContentView: View {
             .navigationTitle(collectionManager.isFavoritesSelected ? "Favorites" : collectionManager.selectedCollection?.name ?? "Shoebox")
             .toolbar {
                 ToolbarItem {
-                    lockToolbarButton
+                    lockToggleButton
                 }
 
-                if selectedPhoto == nil, !showingSlideshow, !collectionManager.isSelectedCollectionLocked, !filteredPhotos.isEmpty {
+                ToolbarItem {
+                    removeLockButton
+                }
+
+                if selectedPhoto == nil, !showingSlideshow, !(collectionManager.isSelectedCollectionPasswordProtected && collectionManager.isLocked), !filteredPhotos.isEmpty {
                     ToolbarItem {
                         Button {
                             detailPhotoID = filteredPhotos.first?.id
@@ -193,16 +196,16 @@ struct ContentView: View {
                 }
             }
         }
-        .onChange(of: collectionManager.isUnlocked) { _, _ in
-            loadSelectedCollection()
-        }
-        .sheet(isPresented: $showSetPasswordSheet) {
-            SetPasswordSheet { password in
-                collectionManager.setPassword(password)
+        .onChange(of: collectionManager.isUnlocked) { _, unlocked in
+            if unlocked && pendingRemoveLock {
+                pendingRemoveLock = false
+                collectionManager.removeLockFromSelectedCollection()
             }
-        }
-        .sheet(isPresented: $showRemovePasswordSheet) {
-            RemovePasswordSheet()
+            if !unlocked && collectionManager.isSelectedCollectionPasswordProtected {
+                selectedPhoto = nil
+                showingSlideshow = false
+            }
+            loadSelectedCollection()
         }
         .sheet(isPresented: $showUnlockSheet) {
             UnlockSheet()
@@ -212,38 +215,57 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Lock Toolbar Button
+    // MARK: - Lock Toolbar Buttons
 
     @ViewBuilder
-    private var lockToolbarButton: some View {
-        if collectionManager.hasPassword && collectionManager.isLocked {
+    private var lockToggleButton: some View {
+        if collectionManager.isLocked {
             Button {
-                showUnlockSheet = true
+                triggerUnlock()
             } label: {
                 Label("Unlock", systemImage: "lock.fill")
             }
-            .help("Unlock")
-        } else if collectionManager.hasPassword {
+            .help("Unlock All Collections")
+        } else {
             Button {
+                if !collectionManager.isSelectedCollectionPasswordProtected {
+                    collectionManager.addLockToSelectedCollection()
+                }
                 collectionManager.lock()
             } label: {
                 Label("Lock", systemImage: "lock.open")
             }
-            .help("Lock")
-            .contextMenu {
-                Button(role: .destructive) {
-                    showRemovePasswordSheet = true
-                } label: {
-                    Label("Remove Password", systemImage: "lock.slash")
-                }
-            }
-        } else {
+            .help("Lock All Collections")
+        }
+    }
+
+    @ViewBuilder
+    private var removeLockButton: some View {
+        if collectionManager.isSelectedCollectionPasswordProtected {
             Button {
-                showSetPasswordSheet = true
+                handleRemoveLock()
             } label: {
-                Label("Set Password", systemImage: "lock.open")
+                Label("Remove Lock", systemImage: "lock.slash")
             }
-            .help("Set Password")
+            .help("Remove Lock from This Collection")
+        }
+    }
+
+    private func triggerUnlock() {
+        switch collectionManager.lockMethod {
+        case .loginPassword:
+            collectionManager.authenticateWithLoginPassword { _ in }
+        case .customPassword:
+            showUnlockSheet = true
+        }
+    }
+
+    private func handleRemoveLock() {
+        if collectionManager.isUnlocked {
+            collectionManager.removeLockFromSelectedCollection()
+        } else {
+            pendingRemoveLock = true
+            triggerUnlock()
         }
     }
 

@@ -35,7 +35,8 @@ struct SidebarView: View {
                         iconColor: .accentColor,
                         title: collection.name,
                         count: collection.photoCount,
-                        isLocked: collection.isPasswordProtected && collectionManager.isLocked
+                        isPasswordProtected: collection.isPasswordProtected,
+                        isLocked: collectionManager.isLocked
                     )
                         .tag(collection.id)
                         .popover(
@@ -153,6 +154,7 @@ struct SidebarRow: View {
     let iconColor: Color
     let title: String
     let count: Int
+    var isPasswordProtected: Bool = false
     var isLocked: Bool = false
 
     var body: some View {
@@ -174,8 +176,8 @@ struct SidebarRow: View {
 
             Spacer()
 
-            if isLocked {
-                Image(systemName: "lock.fill")
+            if isPasswordProtected {
+                Image(systemName: isLocked ? "lock.fill" : "lock.open.fill")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

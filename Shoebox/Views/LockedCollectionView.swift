@@ -18,7 +18,7 @@ struct LockedCollectionView: View {
     @EnvironmentObject var collectionManager: CollectionManager
     @State private var password = ""
     @State private var errorShake = false
-    @State private var showRemovePasswordSheet = false
+    @State private var showSetPasswordSheet = false
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -34,35 +34,48 @@ struct LockedCollectionView: View {
                 .fontWeight(.bold)
                 .foregroundStyle(.primary)
 
-            Text("Enter your password to view this collection.")
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.center)
+            switch collectionManager.lockMethod {
+            case .loginPassword:
+                Button("Unlock with Password") {
+                    collectionManager.authenticateWithLoginPassword { _ in }
+                }
+                .buttonStyle(.bordered)
 
-            HStack(spacing: 8) {
-                SecureField("Password", text: $password)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 200)
-                    .focused($focused)
-                    .onSubmit { attemptUnlock() }
-                    .offset(x: errorShake ? -6 : 0)
+            case .customPassword:
+                if !collectionManager.hasCustomPassword {
+                    Text("Set a password to view this collection.")
+                        .multilineTextAlignment(.center)
+                    Button("Set Password…") {
+                        showSetPasswordSheet = true
+                    }
+                } else {
+                    Text("Enter your password to view this collection.")
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.center)
 
-                Button("Unlock") { attemptUnlock() }
-                    .disabled(password.isEmpty)
+                    HStack(spacing: 8) {
+                        SecureField("Password", text: $password)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 200)
+                            .focused($focused)
+                            .onSubmit { attemptUnlock() }
+                            .offset(x: errorShake ? -6 : 0)
+                    }
+                }
             }
-
-            Button("Remove Password") {
-                showRemovePasswordSheet = true
-            }
-            .buttonStyle(.borderless)
-            .font(.callout)
-            .foregroundStyle(.secondary)
 
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { focused = true }
-        .sheet(isPresented: $showRemovePasswordSheet) {
-            RemovePasswordSheet()
+        .onAppear {
+            if collectionManager.lockMethod == .customPassword {
+                focused = true
+            }
+        }
+        .sheet(isPresented: $showSetPasswordSheet) {
+            SetPasswordSheet { password in
+                collectionManager.setCustomPassword(password)
+            }
         }
     }
 
@@ -144,61 +157,6 @@ struct SetPasswordSheet: View {
     }
 }
 
-// MARK: - Remove Password Sheet
-
-struct RemovePasswordSheet: View {
-    @EnvironmentObject var collectionManager: CollectionManager
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var password = ""
-    @State private var errorShake = false
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "lock.open.fill")
-                .font(.largeTitle)
-                .foregroundStyle(.secondary)
-
-            Text("Remove Password Lock")
-                .font(.headline)
-
-            Text("Enter the current password to remove the lock.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-
-            SecureField("Current Password", text: $password)
-                .focused($focused)
-                .textFieldStyle(.roundedBorder)
-                .offset(x: errorShake ? -6 : 0)
-
-            HStack {
-                Button("Cancel") { dismiss() }
-                    .keyboardShortcut(.cancelAction)
-                Button("Remove Lock") {
-                    if collectionManager.removePassword(verifying: password) {
-                        dismiss()
-                    } else {
-                        withAnimation(.default.repeatCount(3, autoreverses: true).speed(6)) {
-                            errorShake = true
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                            errorShake = false
-                        }
-                        password = ""
-                    }
-                }
-                .keyboardShortcut(.defaultAction)
-                .disabled(password.isEmpty)
-            }
-        }
-        .padding(24)
-        .frame(width: 280)
-        .onAppear { focused = true }
-    }
-}
-
 // MARK: - Unlock Sheet
 
 struct UnlockSheet: View {
@@ -266,11 +224,6 @@ struct UnlockSheet: View {
 
 #Preview("Unlock Sheet") {
     UnlockSheet()
-        .environmentObject(CollectionManager())
-}
-
-#Preview("Remove Password Sheet") {
-    RemovePasswordSheet()
         .environmentObject(CollectionManager())
 }
 

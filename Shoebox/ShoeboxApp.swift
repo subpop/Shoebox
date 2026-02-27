@@ -38,6 +38,11 @@ struct ShoeboxApp: App {
                 .keyboardShortcut("o")
             }
         }
+
+        Settings {
+            SettingsView()
+                .environmentObject(collectionManager)
+        }
     }
 }
 
