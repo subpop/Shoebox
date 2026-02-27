@@ -16,9 +16,9 @@ import AppIntents
 import Foundation
 
 struct CollectionAppEntity: AppEntity {
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Photo Collection"
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Photo Collection"
 
-    static var defaultQuery = CollectionEntityQuery()
+    static let defaultQuery = CollectionEntityQuery()
 
     var id: UUID
     var name: String

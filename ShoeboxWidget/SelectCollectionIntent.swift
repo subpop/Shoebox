@@ -23,9 +23,9 @@ enum SlideshowInterval: String, AppEnum {
     case fiveMinutes = "300"
     case fifteenMinutes = "900"
 
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Slideshow Interval"
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Slideshow Interval"
 
-    static var caseDisplayRepresentations: [SlideshowInterval: DisplayRepresentation] = [
+    static let caseDisplayRepresentations: [SlideshowInterval: DisplayRepresentation] = [
         .fiveSeconds: "5 seconds",
         .tenSeconds: "10 seconds",
         .thirtySeconds: "30 seconds",
@@ -40,8 +40,8 @@ enum SlideshowInterval: String, AppEnum {
 }
 
 struct SelectCollectionIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource = "Select Collection"
-    static var description: IntentDescription = "Choose which photo collection to display."
+    static let title: LocalizedStringResource = "Select Collection"
+    static let description: IntentDescription = "Choose which photo collection to display."
 
     @Parameter(title: "Collection")
     var collection: CollectionAppEntity?
