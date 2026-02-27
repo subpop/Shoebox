@@ -50,20 +50,28 @@ class PhotoLoader: ObservableObject {
         isLoading = true
         photos = []
 
-        currentTask = Task {
-            var allItems: [PhotoItem] = []
+        currentTask = Task { [favoriteIDs] in
+            // Build results per source locally to avoid mutating a captured var from concurrently executing code.
+            var perSourceResults: [[PhotoItem]] = []
+            perSourceResults.reserveCapacity(sources.count)
+
             for source in sources {
                 if Task.isCancelled { return }
                 let items = await scanFolder(url: source.url, recursive: source.recursive)
                 let favorites = items.filter { favoriteIDs.contains($0.id) }
-                allItems.append(contentsOf: favorites)
+                // Append into a local array owned by this task scope; not captured by any @Sendable closure.
+                perSourceResults.append(favorites)
             }
-            if !Task.isCancelled {
-                allItems.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-                await MainActor.run {
-                    self.photos = allItems
-                    self.isLoading = false
-                }
+
+            if Task.isCancelled { return }
+
+            // Flatten immutably and sort before hopping to the main actor.
+            let combined = perSourceResults.flatMap { $0 }
+                .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+
+            await MainActor.run {
+                self.photos = combined
+                self.isLoading = false
             }
         }
     }
@@ -86,3 +94,4 @@ class PhotoLoader: ObservableObject {
         return items
     }
 }
+
