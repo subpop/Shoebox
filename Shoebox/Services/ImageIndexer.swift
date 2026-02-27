@@ -75,7 +75,7 @@ actor ImageIndexer {
             for (i, photo) in photosToIndex.enumerated() {
                 if Task.isCancelled { return }
                 guard let self else { return }
-                let entry = await Self.analyzeImage(at: photo.url, modified: photo.dateModified)
+                let entry = Self.analyzeImage(at: photo.url, modified: photo.dateModified)
                 await self.storeEntry(entry, forID: photo.id)
                 await self.emitProgress(completed: i + 1, total: total)
             }
