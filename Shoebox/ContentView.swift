@@ -115,6 +115,7 @@ struct ContentView: View {
                 }
             }
             .frame(minWidth: 800, minHeight: 500)
+            .toolbar(showingSlideshow ? .hidden : .automatic, for: .windowToolbar)
 
             if selectedPhoto != nil || showingSlideshow {
                 PhotoDetailView(

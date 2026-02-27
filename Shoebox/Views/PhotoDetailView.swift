@@ -72,10 +72,12 @@ struct PhotoDetailView: View {
             Color.black.ignoresSafeArea()
 
             imageArea
+                .ignoresSafeArea()
 
             if slideshowMode {
                 slideshowOverlay
                     .opacity(chromeVisible ? 1 : 0)
+                    .ignoresSafeArea()
             } else {
                 navigationArrows
                     .opacity(chromeVisible ? 1 : 0)

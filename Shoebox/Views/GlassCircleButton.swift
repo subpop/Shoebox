@@ -26,7 +26,7 @@ struct GlassCircleButton: View {
             Image(systemName: systemImage)
                 .font(font)
                 .fontWeight(.semibold)
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .frame(width: size, height: size)
                 .contentShape(Circle())
         }
