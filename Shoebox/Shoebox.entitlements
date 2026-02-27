@@ -6,7 +6,7 @@
 	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>$(TeamIdentifierPrefix)group.net.sub-pop.shoebox</string>
+		<string>$(TeamIdentifierPrefix)group.app.subpop.Shoebox</string>
 	</array>
 	<key>com.apple.security.files.bookmarks.app-scope</key>
 	<true/>
