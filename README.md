@@ -2,7 +2,7 @@
 
 A native macOS photo browser built with SwiftUI. Add local folders as "collections" and browse, search, and slideshow your photos. A companion desktop widget displays a rotating slideshow from a chosen collection.
 
-![Screenshot](./Screenshot.png)
+![Screenshot](./Shoebox collection.png)
 
 ## Features
 
