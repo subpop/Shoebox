@@ -29,13 +29,13 @@ struct LockedCollectionView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(.tertiary)
 
-            Text("This Collection is Locked")
+            Text("This collection is locked.")
                 .font(.title2)
-                .foregroundStyle(.secondary)
+                .fontWeight(.bold)
+                .foregroundStyle(.primary)
 
             Text("Enter your password to view this collection.")
-                .font(.callout)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
 
             HStack(spacing: 8) {
@@ -262,4 +262,21 @@ struct UnlockSheet: View {
     LockedCollectionView()
         .environmentObject(CollectionManager())
         .frame(width: 600, height: 400)
+}
+
+#Preview("Unlock Sheet") {
+    UnlockSheet()
+        .environmentObject(CollectionManager())
+}
+
+#Preview("Remove Password Sheet") {
+    RemovePasswordSheet()
+        .environmentObject(CollectionManager())
+}
+
+#Preview("Set Password Sheet") {
+    SetPasswordSheet(onSet: { _ in
+        return
+    })
+        .environmentObject(CollectionManager())
 }
