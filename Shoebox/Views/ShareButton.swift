@@ -40,7 +40,7 @@ struct ShareButton: NSViewRepresentable {
 
         init(url: URL) { self.url = url }
 
-        @objc func showPicker(_ sender: NSButton) {
+        @MainActor @objc func showPicker(_ sender: NSButton) {
             let picker = NSSharingServicePicker(items: [url])
             picker.delegate = self
             picker.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)

@@ -15,6 +15,7 @@
 import Foundation
 import AppKit
 
+@MainActor
 class PhotoLoader: ObservableObject {
     @Published var photos: [PhotoItem] = []
     @Published var isLoading = false
@@ -30,10 +31,8 @@ class PhotoLoader: ObservableObject {
         currentTask = Task {
             let items = await scanFolder(url: url, recursive: recursive)
             if !Task.isCancelled {
-                await MainActor.run {
-                    self.photos = items
-                    self.isLoading = false
-                }
+                photos = items
+                isLoading = false
             }
         }
     }
@@ -69,10 +68,8 @@ class PhotoLoader: ObservableObject {
             let combined = perSourceResults.flatMap { $0 }
                 .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
 
-            await MainActor.run {
-                self.photos = combined
-                self.isLoading = false
-            }
+            photos = combined
+            isLoading = false
         }
     }
 
@@ -82,7 +79,7 @@ class PhotoLoader: ObservableObject {
         isLoading = false
     }
 
-    private func scanFolder(url: URL, recursive: Bool) async -> [PhotoItem] {
+    nonisolated private func scanFolder(url: URL, recursive: Bool) async -> [PhotoItem] {
         let urls = ShoeboxKit.imageURLs(
             in: url,
             recursive: recursive,

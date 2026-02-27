@@ -255,7 +255,7 @@ struct ContentView: View {
     private func triggerUnlock() {
         switch collectionManager.lockMethod {
         case .loginPassword:
-            collectionManager.authenticateWithLoginPassword { _ in }
+            Task { await collectionManager.authenticateWithLoginPassword() }
         case .customPassword:
             showUnlockSheet = true
         }

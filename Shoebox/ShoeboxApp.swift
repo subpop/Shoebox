@@ -51,7 +51,7 @@ extension Notification.Name {
 }
 
 /// Presents an NSOpenPanel configured for folder selection and returns the chosen URL.
-func presentFolderPanel() -> URL? {
+@MainActor func presentFolderPanel() -> URL? {
     let panel = NSOpenPanel()
     panel.canChooseDirectories = true
     panel.canChooseFiles = false

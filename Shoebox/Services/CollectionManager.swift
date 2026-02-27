@@ -23,6 +23,7 @@ enum LockMethod: String {
     case customPassword
 }
 
+@MainActor
 class CollectionManager: ObservableObject {
     static let favoritesCollectionID = ShoeboxKit.favoritesCollectionID
 
@@ -90,16 +91,17 @@ class CollectionManager: ObservableObject {
         isUnlocked = false
     }
 
-    func authenticateWithLoginPassword(completion: @escaping (Bool) -> Void) {
+    func authenticateWithLoginPassword() async -> Bool {
         let context = LAContext()
-        context.evaluatePolicy(
-            .deviceOwnerAuthentication,
-            localizedReason: "Unlock your collections"
-        ) { success, _ in
-            DispatchQueue.main.async {
-                if success { self.isUnlocked = true }
-                completion(success)
-            }
+        do {
+            let success = try await context.evaluatePolicy(
+                .deviceOwnerAuthentication,
+                localizedReason: "Unlock your collections"
+            )
+            if success { isUnlocked = true }
+            return success
+        } catch {
+            return false
         }
     }
 
@@ -141,7 +143,9 @@ class CollectionManager: ObservableObject {
 
     deinit {
         accessedURL?.stopAccessingSecurityScopedResource()
-        stopAccessingAll()
+        for url in accessedURLs {
+            url.stopAccessingSecurityScopedResource()
+        }
     }
 
     // MARK: - Collection Management
@@ -350,7 +354,7 @@ class CollectionManager: ObservableObject {
         }
     }
 
-    private static func exportThumbnail(from url: URL, to directory: URL, index: Int) -> (filename: String, focusPoint: CGPoint)? {
+    nonisolated private static func exportThumbnail(from url: URL, to directory: URL, index: Int) -> (filename: String, focusPoint: CGPoint)? {
         guard let cgImage = ThumbnailGenerator.createThumbnail(from: url, maxPixelSize: 800) else { return nil }
 
         let focusPoint = SmartCropper.focusPoint(for: cgImage)
@@ -384,3 +388,4 @@ class CollectionManager: ObservableObject {
         return ShoeboxKit.imageURLs(in: url, recursive: recursive).count
     }
 }
+

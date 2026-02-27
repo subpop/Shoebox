@@ -37,7 +37,7 @@ struct LockedCollectionView: View {
             switch collectionManager.lockMethod {
             case .loginPassword:
                 Button("Unlock with Password") {
-                    collectionManager.authenticateWithLoginPassword { _ in }
+                    Task { await collectionManager.authenticateWithLoginPassword() }
                 }
                 .buttonStyle(.bordered)
 
