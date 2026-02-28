@@ -29,7 +29,7 @@ struct ShoeboxApp: App {
                 .environmentObject(collectionManager)
                 .environmentObject(favoritesManager)
         }
-        .defaultSize(width: 900, height: 700)
+        .defaultSize(width: 800, height: 500)
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("Add Folder...") {
