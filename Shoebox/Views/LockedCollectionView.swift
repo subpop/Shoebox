@@ -96,6 +96,35 @@ struct LockedCollectionView: View {
     }
 }
 
+// MARK: - Password Sheet Layout
+
+/// Shared layout for password-related sheets (set password, unlock, etc.)
+private struct PasswordSheetLayout<Content: View>: View {
+    let title: String
+    let subtitle: String
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "lock.fill")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+
+            Text(title)
+                .font(.headline)
+
+            Text(subtitle)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            content
+        }
+        .padding(24)
+        .frame(width: 280)
+    }
+}
+
 // MARK: - Set Password Sheet
 
 struct SetPasswordSheet: View {
@@ -113,19 +142,10 @@ struct SetPasswordSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "lock.fill")
-                .font(.largeTitle)
-                .foregroundStyle(.secondary)
-
-            Text("Set a Password")
-                .font(.headline)
-
-            Text("This password will be required to view your collections.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-
+        PasswordSheetLayout(
+            title: "Set a Password",
+            subtitle: "This password will be required to view your collections."
+        ) {
             SecureField("Password", text: $password)
                 .focused($focused, equals: .password)
                 .textFieldStyle(.roundedBorder)
@@ -151,8 +171,6 @@ struct SetPasswordSheet: View {
                 .disabled(!passwordsMatch)
             }
         }
-        .padding(24)
-        .frame(width: 280)
         .onAppear { focused = .password }
     }
 }
@@ -168,19 +186,10 @@ struct UnlockSheet: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "lock.fill")
-                .font(.largeTitle)
-                .foregroundStyle(.secondary)
-
-            Text("Unlock Collections")
-                .font(.headline)
-
-            Text("Enter your password to view protected collections.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-
+        PasswordSheetLayout(
+            title: "Unlock Collections",
+            subtitle: "Enter your password to view protected collections."
+        ) {
             SecureField("Password", text: $password)
                 .focused($focused)
                 .textFieldStyle(.roundedBorder)
@@ -195,8 +204,6 @@ struct UnlockSheet: View {
                     .disabled(password.isEmpty)
             }
         }
-        .padding(24)
-        .frame(width: 280)
         .onAppear { focused = true }
     }
 
