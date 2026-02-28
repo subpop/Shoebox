@@ -27,6 +27,12 @@ enum ShoeboxKit {
     static let lockMethodKey = "lockMethod"
     static let favoritesCollectionID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
 
+    /// Max pixel dimension for thumbnails used in widget export and image analysis.
+    static let processingThumbnailSize: CGFloat = 800
+
+    /// Size used for grid thumbnail caching.
+    static let gridThumbnailSize = CGSize(width: 300, height: 300)
+
     static let imageExtensions: Set<String> = [
         "jpg", "jpeg", "png", "gif", "heic", "heif",
         "tiff", "tif", "bmp", "webp"

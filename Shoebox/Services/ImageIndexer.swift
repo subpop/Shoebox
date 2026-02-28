@@ -38,7 +38,6 @@ actor ImageIndexer {
     private var onProgress: (@Sendable (IndexProgress) -> Void)?
 
     private static let classificationConfidenceThreshold: Float = 0.4
-    private static let thumbnailSize: CGFloat = 800
 
     private var diskCacheURL: URL {
         let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
@@ -149,7 +148,7 @@ actor ImageIndexer {
     // MARK: - Vision Analysis
 
     private static func analyzeImage(at url: URL, modified: Date) -> IndexEntry {
-        guard let cgImage = ThumbnailGenerator.createThumbnail(from: url, maxPixelSize: thumbnailSize) else {
+        guard let cgImage = ThumbnailGenerator.createThumbnail(from: url, maxPixelSize: ShoeboxKit.processingThumbnailSize) else {
             return IndexEntry(tags: [], text: [], fileModified: modified)
         }
 

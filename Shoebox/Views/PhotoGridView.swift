@@ -337,7 +337,7 @@ struct ThumbnailView: View {
             isLoading = true
             thumbnail = await ThumbnailCache.shared.thumbnail(
                 for: photo.url,
-                size: CGSize(width: 300, height: 300)
+                size: ShoeboxKit.gridThumbnailSize
             )
             isLoading = false
         }

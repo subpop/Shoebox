@@ -352,7 +352,7 @@ class CollectionManager: ObservableObject {
     }
 
     nonisolated private static func exportThumbnail(from url: URL, to directory: URL, index: Int) -> (filename: String, focusPoint: CGPoint)? {
-        guard let cgImage = ThumbnailGenerator.createThumbnail(from: url, maxPixelSize: 800) else { return nil }
+        guard let cgImage = ThumbnailGenerator.createThumbnail(from: url, maxPixelSize: ShoeboxKit.processingThumbnailSize) else { return nil }
 
         let focusPoint = SmartCropper.focusPoint(for: cgImage)
 
