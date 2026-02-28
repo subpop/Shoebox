@@ -45,7 +45,7 @@ struct EmptyStateView: View {
                     .foregroundStyle(.quaternary)
                 Text("Or drag a folder into the sidebar")
                     .font(.callout)
-                    .foregroundStyle(.quaternary)
+                    .foregroundStyle(.tertiary)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
