@@ -224,25 +224,16 @@ struct PhotoGridView: View {
     // MARK: - Empty States
 
     private var noSimilarPhotosView: some View {
-        VStack(spacing: 12) {
-            Spacer()
-            Image(systemName: "sparkle.magnifyingglass")
-                .font(.system(size: 48))
-                .foregroundStyle(.tertiary)
-            Text("No similar photos found")
-                .font(.title2)
-                .foregroundStyle(.secondary)
-            Text("Try again after indexing completes, or with a different photo.")
-                .font(.callout)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
+        PlaceholderView(
+            icon: "sparkle.magnifyingglass",
+            title: "No similar photos found",
+            subtitle: "Try again after indexing completes, or with a different photo."
+        ) {
             Button("Clear") {
                 similaritySourceID = nil
             }
             .buttonStyle(.borderless)
-            Spacer()
         }
-        .frame(maxWidth: .infinity)
     }
 
     private var loadingView: some View {
@@ -256,21 +247,60 @@ struct PhotoGridView: View {
     }
 
     private var noPhotosView: some View {
+        PlaceholderView(
+            icon: "photo.on.rectangle.angled",
+            title: "No photos found",
+            subtitle: "This folder doesn't contain any supported image files."
+        )
+    }
+}
+
+// MARK: - Placeholder View
+
+/// Reusable empty-state view with an icon, title, subtitle, and optional action.
+struct PlaceholderView<Action: View>: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    @ViewBuilder var action: Action
+
+    init(
+        icon: String,
+        title: String,
+        subtitle: String,
+        @ViewBuilder action: () -> Action
+    ) {
+        self.icon = icon
+        self.title = title
+        self.subtitle = subtitle
+        self.action = action()
+    }
+
+    var body: some View {
         VStack(spacing: 12) {
             Spacer()
-            Image(systemName: "photo.on.rectangle.angled")
+            Image(systemName: icon)
                 .font(.system(size: 48))
                 .foregroundStyle(.tertiary)
-            Text("No photos found")
+            Text(title)
                 .font(.title2)
                 .foregroundStyle(.secondary)
-            Text("This folder doesn't contain any supported image files.")
+            Text(subtitle)
                 .font(.callout)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
+            action
             Spacer()
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+extension PlaceholderView where Action == EmptyView {
+    init(icon: String, title: String, subtitle: String) {
+        self.init(icon: icon, title: title, subtitle: subtitle) {
+            EmptyView()
+        }
     }
 }
 
