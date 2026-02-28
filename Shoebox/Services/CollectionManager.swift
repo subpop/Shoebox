@@ -34,7 +34,6 @@ class CollectionManager: ObservableObject {
     @Published private(set) var isUnlocked = false
     @Published private(set) var lockMethod: LockMethod = .loginPassword
     private let defaults: UserDefaults
-    private var accessedURL: URL?
     private var accessedURLs: [URL] = []
 
     var selectedCollection: PhotoCollection? {
@@ -142,7 +141,6 @@ class CollectionManager: ObservableObject {
     }
 
     deinit {
-        accessedURL?.stopAccessingSecurityScopedResource()
         for url in accessedURLs {
             url.stopAccessingSecurityScopedResource()
         }
@@ -212,14 +210,12 @@ class CollectionManager: ObservableObject {
     // MARK: - URL Resolution & Security Scope
 
     func startAccessing(collection: PhotoCollection) -> URL? {
-        accessedURL?.stopAccessingSecurityScopedResource()
-        accessedURL = nil
+        stopAccessingAll()
 
         guard let url = resolveURL(for: collection) else { return nil }
 
-        let accessing = url.startAccessingSecurityScopedResource()
-        if accessing {
-            accessedURL = url
+        if url.startAccessingSecurityScopedResource() {
+            accessedURLs.append(url)
         }
 
         return url
@@ -237,8 +233,6 @@ class CollectionManager: ObservableObject {
     }
 
     private func startAccessing(collections subset: [PhotoCollection]) -> [(url: URL, recursive: Bool)] {
-        accessedURL?.stopAccessingSecurityScopedResource()
-        accessedURL = nil
         stopAccessingAll()
 
         var results: [(url: URL, recursive: Bool)] = []
