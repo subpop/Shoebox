@@ -59,7 +59,7 @@ struct LockedCollectionView: View {
                             .frame(width: 200)
                             .focused($focused)
                             .onSubmit { attemptUnlock() }
-                            .offset(x: errorShake ? -6 : 0)
+                            .errorShake(errorShake)
                     }
                 }
             }
@@ -84,15 +84,38 @@ struct LockedCollectionView: View {
         if collectionManager.unlock(password: password) {
             password = ""
         } else {
-            withAnimation(.default.repeatCount(3, autoreverses: true).speed(6)) {
-                errorShake = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                errorShake = false
-            }
+            triggerErrorShake($errorShake)
             password = ""
             focused = true
         }
+    }
+}
+
+// MARK: - Error Shake
+
+/// Applies a horizontal shake offset driven by the given flag.
+/// Call `triggerErrorShake(_:)` to fire the animation and auto-reset.
+private struct ErrorShakeModifier: ViewModifier {
+    var shaking: Bool
+
+    func body(content: Content) -> some View {
+        content.offset(x: shaking ? -6 : 0)
+    }
+}
+
+extension View {
+    func errorShake(_ shaking: Bool) -> some View {
+        modifier(ErrorShakeModifier(shaking: shaking))
+    }
+}
+
+/// Triggers the error shake animation on the given binding, then resets it.
+func triggerErrorShake(_ flag: Binding<Bool>) {
+    withAnimation(.default.repeatCount(3, autoreverses: true).speed(6)) {
+        flag.wrappedValue = true
+    }
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        flag.wrappedValue = false
     }
 }
 
@@ -194,7 +217,7 @@ struct UnlockSheet: View {
                 .focused($focused)
                 .textFieldStyle(.roundedBorder)
                 .onSubmit { attemptUnlock() }
-                .offset(x: errorShake ? -6 : 0)
+                .errorShake(errorShake)
 
             HStack {
                 Button("Cancel") { dismiss() }
@@ -212,12 +235,7 @@ struct UnlockSheet: View {
         if collectionManager.unlock(password: password) {
             dismiss()
         } else {
-            withAnimation(.default.repeatCount(3, autoreverses: true).speed(6)) {
-                errorShake = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                errorShake = false
-            }
+            triggerErrorShake($errorShake)
             password = ""
         }
     }
