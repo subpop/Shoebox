@@ -290,17 +290,14 @@ class CollectionManager: ObservableObject {
     }
 
     private func loadCollections() {
-        if let data = defaults.data(forKey: ShoeboxKit.collectionsKey),
-           let decoded = try? JSONDecoder().decode([PhotoCollection].self, from: data) {
-            collections = decoded
+        collections = ShoeboxKit.loadCollections()
 
-            if let savedID = defaults.string(forKey: ShoeboxKit.selectedCollectionIDKey),
-               let uuid = UUID(uuidString: savedID),
-               uuid == Self.favoritesCollectionID || collections.contains(where: { $0.id == uuid }) {
-                selectedCollectionID = uuid
-            } else {
-                selectedCollectionID = collections.first?.id
-            }
+        if let savedID = defaults.string(forKey: ShoeboxKit.selectedCollectionIDKey),
+           let uuid = UUID(uuidString: savedID),
+           uuid == Self.favoritesCollectionID || collections.contains(where: { $0.id == uuid }) {
+            selectedCollectionID = uuid
+        } else {
+            selectedCollectionID = collections.first?.id
         }
     }
 

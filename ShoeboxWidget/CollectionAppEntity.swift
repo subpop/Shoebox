@@ -64,8 +64,7 @@ struct CollectionEntityQuery: EntityQuery {
         var entities: [CollectionAppEntity] = []
 
         // Include Favorites if there are any favorited photos
-        let defaults = ShoeboxKit.sharedDefaults
-        let favoriteCount = (defaults.stringArray(forKey: ShoeboxKit.favoritesKey) ?? []).count
+        let favoriteCount = (ShoeboxKit.sharedDefaults.stringArray(forKey: ShoeboxKit.favoritesKey) ?? []).count
         if favoriteCount > 0 {
             entities.append(CollectionAppEntity(
                 id: ShoeboxKit.favoritesCollectionID,
@@ -73,10 +72,7 @@ struct CollectionEntityQuery: EntityQuery {
             ))
         }
 
-        if let data = defaults.data(forKey: ShoeboxKit.collectionsKey),
-           let collections = try? JSONDecoder().decode([PhotoCollection].self, from: data) {
-            entities.append(contentsOf: collections.map { CollectionAppEntity(from: $0) })
-        }
+        entities.append(contentsOf: ShoeboxKit.loadCollections().map { CollectionAppEntity(from: $0) })
 
         return entities
     }

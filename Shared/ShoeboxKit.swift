@@ -59,6 +59,14 @@ enum ShoeboxKit {
         UserDefaults(suiteName: appGroupIdentifier) ?? .standard
     }
 
+    /// Load saved collections from shared UserDefaults.
+    static func loadCollections() -> [PhotoCollection] {
+        guard let data = sharedDefaults.data(forKey: collectionsKey),
+              let decoded = try? JSONDecoder().decode([PhotoCollection].self, from: data)
+        else { return [] }
+        return decoded
+    }
+
     static func photoCountLabel(_ count: Int) -> String {
         "\(count) photo\(count == 1 ? "" : "s")"
     }
