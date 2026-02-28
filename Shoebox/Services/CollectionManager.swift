@@ -18,6 +18,13 @@ import LocalAuthentication
 import SwiftUI
 import WidgetKit
 
+extension Data {
+    /// Returns a lowercase hex-encoded SHA-256 digest of the receiver.
+    var sha256Hex: String {
+        SHA256.hash(data: self).compactMap { String(format: "%02x", $0) }.joined()
+    }
+}
+
 enum LockMethod: String {
     case loginPassword
     case customPassword
@@ -124,8 +131,7 @@ class CollectionManager: ObservableObject {
     }
 
     static func hashPassword(_ password: String) -> String {
-        let data = Data(password.utf8)
-        return SHA256.hash(data: data).compactMap { String(format: "%02x", $0) }.joined()
+        Data(password.utf8).sha256Hex
     }
 
     init() {

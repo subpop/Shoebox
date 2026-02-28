@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import AppKit
-import CryptoKit
 
 actor ThumbnailCache {
     static let shared = ThumbnailCache()
@@ -76,8 +75,7 @@ actor ThumbnailCache {
 
     private func cacheFileURL(for url: URL, size: CGSize) -> URL {
         let key = "\(url.absoluteString)|\(Int(size.width))x\(Int(size.height))"
-        let hash = SHA256.hash(data: Data(key.utf8))
-        let name = hash.compactMap { String(format: "%02x", $0) }.joined()
+        let name = Data(key.utf8).sha256Hex
         return diskCacheURL.appendingPathComponent(name + ".jpg")
     }
 
