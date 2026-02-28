@@ -135,6 +135,11 @@ actor ImageIndexer {
         entries[id] = entry
     }
 
+    /// Allows tests to inject entries directly.
+    func storeEntryForTesting(_ entry: IndexEntry, forID id: String) {
+        entries[id] = entry
+    }
+
     private func emitProgress(completed: Int, total: Int) {
         onProgress?(IndexProgress(completed: completed, total: total))
     }

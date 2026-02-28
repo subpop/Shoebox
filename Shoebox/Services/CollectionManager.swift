@@ -134,8 +134,8 @@ class CollectionManager: ObservableObject {
         Data(password.utf8).sha256Hex
     }
 
-    init() {
-        self.defaults = ShoeboxKit.sharedDefaults
+    init(defaults: UserDefaults = ShoeboxKit.sharedDefaults) {
+        self.defaults = defaults
 
         if let raw = defaults.string(forKey: ShoeboxKit.lockMethodKey),
            let method = LockMethod(rawValue: raw) {

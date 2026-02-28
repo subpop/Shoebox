@@ -22,8 +22,8 @@ class FavoritesManager: ObservableObject {
 
     var count: Int { favoriteIDs.count }
 
-    init() {
-        self.defaults = ShoeboxKit.sharedDefaults
+    init(defaults: UserDefaults = ShoeboxKit.sharedDefaults) {
+        self.defaults = defaults
         loadFavorites()
     }
 
