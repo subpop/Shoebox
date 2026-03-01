@@ -56,10 +56,10 @@ struct ContentView: View {
     }
 
     var body: some View {
-        ZStack {
-            NavigationSplitView(columnVisibility: $columnVisibility) {
-                SidebarView()
-            } detail: {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
+            SidebarView()
+        } detail: {
+            ZStack {
                 if collectionManager.isSelectedCollectionPasswordProtected && collectionManager.isLocked {
                     LockedCollectionView()
                 } else if collectionManager.isFavoritesSelected || collectionManager.selectedCollection != nil {
@@ -75,67 +75,68 @@ struct ContentView: View {
                 } else {
                     EmptyStateView()
                 }
-            }
-            .navigationTitle(collectionManager.isFavoritesSelected ? "Favorites" : collectionManager.selectedCollection?.name ?? "Shoebox")
-            .toolbar {
-                ToolbarItem {
-                    lockToggleButton
-                }
 
-                ToolbarItem {
-                    removeLockButton
-                }
-
-                if selectedPhoto == nil, !showingSlideshow, !(collectionManager.isSelectedCollectionPasswordProtected && collectionManager.isLocked), !filteredPhotos.isEmpty {
-                    ToolbarItem {
-                        Button {
-                            detailPhotoID = filteredPhotos.first?.id
-                            showingSlideshow = true
-                        } label: {
-                            Label("Slideshow", systemImage: "play.fill")
+                if selectedPhoto != nil || showingSlideshow {
+                    PhotoDetailView(
+                        photos: filteredPhotos,
+                        isPresented: Binding(
+                            get: { selectedPhoto != nil || showingSlideshow },
+                            set: { if !$0 { selectedPhoto = nil; showingSlideshow = false } }
+                        ),
+                        showInfo: $showDetailInfo,
+                        scrolledPhotoID: $detailPhotoID,
+                        slideshowMode: showingSlideshow,
+                        onFindSimilar: { photoID in
+                            selectedPhoto = nil
+                            showingSlideshow = false
+                            findSimilar(to: photoID)
                         }
-                    }
+                    )
+                    .transition(.opacity)
                 }
-
-                if selectedPhoto != nil, !showingSlideshow, let photo = detailCurrentPhoto {
-                    ToolbarItemGroup {
-                        FavoriteButton(photo: photo)
-
-                        ShareButton(url: photo.url)
-                            .frame(width: 28, height: 22)
-                            .help("Share")
-
-                        Button {
-                            showDetailInfo.toggle()
-                        } label: {
-                            Image(systemName: showDetailInfo ? "info.circle.fill" : "info.circle")
-                        }
-                        .help("Info")
-                    }
-                }
-            }
-            .frame(minWidth: 800, minHeight: 500)
-            .toolbar(showingSlideshow ? .hidden : .automatic, for: .windowToolbar)
-
-            if selectedPhoto != nil || showingSlideshow {
-                PhotoDetailView(
-                    photos: filteredPhotos,
-                    isPresented: Binding(
-                        get: { selectedPhoto != nil || showingSlideshow },
-                        set: { if !$0 { selectedPhoto = nil; showingSlideshow = false } }
-                    ),
-                    showInfo: $showDetailInfo,
-                    scrolledPhotoID: $detailPhotoID,
-                    slideshowMode: showingSlideshow,
-                    onFindSimilar: { photoID in
-                        selectedPhoto = nil
-                        showingSlideshow = false
-                        findSimilar(to: photoID)
-                    }
-                )
-                .transition(.opacity)
             }
         }
+        .navigationTitle(collectionManager.isFavoritesSelected ? "Favorites" : collectionManager.selectedCollection?.name ?? "Shoebox")
+        .toolbar {
+            ToolbarItem {
+                lockToggleButton
+            }
+
+            ToolbarItem {
+                removeLockButton
+            }
+
+            if selectedPhoto == nil, !showingSlideshow, !(collectionManager.isSelectedCollectionPasswordProtected && collectionManager.isLocked), !filteredPhotos.isEmpty {
+                ToolbarItem {
+                    Button {
+                        detailPhotoID = filteredPhotos.first?.id
+                        showingSlideshow = true
+                    } label: {
+                        Label("Slideshow", systemImage: "play.fill")
+                    }
+                }
+            }
+
+            if selectedPhoto != nil, !showingSlideshow, let photo = detailCurrentPhoto {
+                ToolbarItemGroup {
+                    FavoriteButton(photo: photo)
+
+                    ShareButton(url: photo.url)
+                        .frame(width: 28, height: 22)
+                        .help("Share")
+
+                    Button {
+                        showDetailInfo.toggle()
+                    } label: {
+                        Image(systemName: showDetailInfo ? "info.circle.fill" : "info.circle")
+                    }
+                    .help("Info")
+                }
+            }
+        }
+        .frame(minWidth: 800, minHeight: 500)
+        .toolbar(showingSlideshow ? .hidden : .automatic, for: .windowToolbar)
+        .toolbarBackgroundVisibility(selectedPhoto != nil ? .hidden : .automatic, for: .windowToolbar)
         .onChange(of: selectedPhoto) { _, newValue in
             if let photo = newValue {
                 detailPhotoID = photo.id
@@ -157,6 +158,8 @@ struct ContentView: View {
             }
         }
         .onChange(of: collectionManager.selectedCollectionID) { _, _ in
+            selectedPhoto = nil
+            showingSlideshow = false
             similaritySourceID = nil
             similarityResults = []
             Task { @MainActor in
