@@ -32,10 +32,17 @@ struct ShoeboxApp: App {
         .defaultSize(width: 800, height: 500)
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button("Add Folder...") {
+                Button("Add Folder…") {
                     NotificationCenter.default.post(name: .openFolder, object: nil)
                 }
                 .keyboardShortcut("o")
+            }
+            SidebarCommands()
+            CommandGroup(after: .help) {
+                Button("Provide Feedback...") {
+                    let url = URL(string: "https://github.com/subpop/Shoebox/issues")!
+                    NSWorkspace.shared.open(url)
+                }
             }
         }
 
