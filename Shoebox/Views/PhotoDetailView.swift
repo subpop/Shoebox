@@ -454,13 +454,12 @@ struct PhotoDetailView: View {
 
     private func loadCurrentImage() {
         currentImage = nil
-        let photo = currentPhoto
-        Task {
-            if let image = NSImage(contentsOf: photo.url) {
-                await MainActor.run {
-                    withAnimation(.easeIn(duration: 0.15)) {
-                        currentImage = image
-                    }
+        let url = currentPhoto.url
+        Task.detached {
+            let image = NSImage(contentsOf: url)
+            await MainActor.run {
+                withAnimation(.easeIn(duration: 0.15)) {
+                    currentImage = image
                 }
             }
         }
@@ -492,7 +491,11 @@ private struct PhotoPageView: View {
             }
         }
         .task(id: photo.id) {
-            image = NSImage(contentsOf: photo.url)
+            let url = photo.url
+            let loaded = await Task.detached {
+                NSImage(contentsOf: url)
+            }.value
+            image = loaded
         }
     }
 
