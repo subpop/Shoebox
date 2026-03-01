@@ -473,21 +473,37 @@ private struct PhotoPageView: View {
     @Binding var scale: CGFloat
     @Binding var offset: CGSize
     @State private var image: NSImage?
+    @State private var lastScaleValue: CGFloat = 1.0
+
+    private let minScale: CGFloat = 0.25
+    private let maxScale: CGFloat = 5.0
 
     var body: some View {
-        Group {
+        GeometryReader { geometry in
+            let viewSize = geometry.size
             if let image {
+                let imageSize = imagePixelSize(image)
+                let fitScale = fitScaleFactor(imageSize: imageSize, viewSize: viewSize)
+                let displayWidth = imageSize.width * fitScale * scale
+                let displayHeight = imageSize.height * fitScale * scale
+
                 Image(nsImage: image)
                     .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .scaleEffect(scale)
+                    .frame(width: displayWidth, height: displayHeight)
                     .offset(offset)
+                    .frame(width: viewSize.width, height: viewSize.height)
                     .gesture(magnificationGesture)
                     .gesture(dragGesture)
+                    .onChange(of: scale) { oldValue, newValue in
+                        if newValue == 1.0 && oldValue != 1.0 {
+                            lastScaleValue = 1.0
+                        }
+                    }
             } else {
                 ProgressView()
                     .progressViewStyle(.circular)
                     .tint(.white)
+                    .frame(width: viewSize.width, height: viewSize.height)
             }
         }
         .task(id: photo.id) {
@@ -499,34 +515,40 @@ private struct PhotoPageView: View {
         }
     }
 
+    private func imagePixelSize(_ image: NSImage) -> CGSize {
+        if let rep = image.representations.first {
+            return CGSize(width: rep.pixelsWide, height: rep.pixelsHigh)
+        }
+        return image.size
+    }
+
+    private func fitScaleFactor(imageSize: CGSize, viewSize: CGSize) -> CGFloat {
+        guard imageSize.width > 0, imageSize.height > 0 else { return 1.0 }
+        let scaleX = viewSize.width / imageSize.width
+        let scaleY = viewSize.height / imageSize.height
+        return max(scaleX, scaleY)
+    }
+
     private var magnificationGesture: some Gesture {
         MagnificationGesture()
             .onChanged { value in
-                scale = max(0.5, min(5.0, value))
+                let newScale = lastScaleValue * value
+                scale = max(minScale, min(maxScale, newScale))
             }
-            .onEnded { _ in
-                withAnimation(.spring(duration: 0.3)) {
-                    if scale < 1.0 {
-                        scale = 1.0
-                        offset = .zero
-                    }
-                }
+            .onEnded { value in
+                let newScale = lastScaleValue * value
+                scale = max(minScale, min(maxScale, newScale))
+                lastScaleValue = scale
             }
     }
 
     private var dragGesture: some Gesture {
         DragGesture()
             .onChanged { value in
-                if scale > 1.0 {
-                    offset = value.translation
-                }
+                offset = value.translation
             }
             .onEnded { _ in
-                if scale <= 1.0 {
-                    withAnimation(.spring(duration: 0.3)) {
-                        offset = .zero
-                    }
-                }
+                // Keep the offset where the user left it
             }
     }
 }
