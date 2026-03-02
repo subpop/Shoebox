@@ -14,6 +14,8 @@
 
 import SwiftUI
 
+private let zoomRange: ClosedRange<CGFloat> = 0.1...5.0
+
 struct PhotoDetailView: View {
     let photos: [PhotoItem]
     @Binding var isPresented: Bool
@@ -79,10 +81,9 @@ struct PhotoDetailView: View {
                     .opacity(chromeVisible ? 1 : 0)
                     .ignoresSafeArea()
             } else {
-                navigationArrows
+                detailOverlay
                     .opacity(chromeVisible ? 1 : 0)
-                closeButton
-                    .opacity(chromeVisible ? 1 : 0)
+                    .ignoresSafeArea()
             }
 
             if showInfo && !slideshowMode {
@@ -161,46 +162,82 @@ struct PhotoDetailView: View {
         .scrollIndicators(.hidden)
     }
 
-    // MARK: - Navigation Arrows (detail mode)
+    // MARK: - Detail Overlay
 
-    private var navigationArrows: some View {
-        HStack {
-            GlassCircleButton(systemImage: "chevron.left") {
-                navigatePrevious()
-            }
-            .opacity(currentIndex > 0 ? 1 : 0.3)
-            .disabled(currentIndex == 0)
-            .padding(.leading, 20)
-
-            Spacer()
-
-            GlassCircleButton(systemImage: "chevron.right") {
-                navigateNext()
-            }
-            .opacity(currentIndex < displayOrder.count - 1 ? 1 : 0.3)
-            .disabled(currentIndex >= displayOrder.count - 1)
-            .padding(.trailing, 20)
-        }
-    }
-
-    // MARK: - Close Button (detail mode)
-
-    private var closeButton: some View {
-        VStack {
-            HStack {
-                if onFindSimilar != nil {
-                    GlassCircleButton(systemImage: "sparkle.magnifyingglass") {
-                        onFindSimilar?(currentPhoto.id)
+    private var detailOverlay: some View {
+        ZStack {
+            // Top bar: find similar + close
+            VStack {
+                HStack {
+                    if onFindSimilar != nil {
+                        OverlayCircleButton(systemImage: "sparkle.magnifyingglass") {
+                            onFindSimilar?(currentPhoto.id)
+                        }
+                        .help("Find Similar")
                     }
-                    .help("Find Similar")
+                    Spacer()
+                    OverlayCircleButton(systemImage: "xmark") {
+                        dismiss()
+                    }
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 52)
                 Spacer()
-                GlassCircleButton(systemImage: "xmark") {
-                    dismiss()
-                }
             }
-            .padding(20)
-            Spacer()
+
+            // Navigation arrows: vertically centered
+            HStack {
+                OverlayCircleButton(systemImage: "chevron.left") {
+                    navigatePrevious()
+                }
+                .opacity(currentIndex > 0 ? 1 : 0.3)
+                .disabled(currentIndex == 0)
+                .padding(.leading, 20)
+
+                Spacer()
+
+                OverlayCircleButton(systemImage: "chevron.right") {
+                    navigateNext()
+                }
+                .opacity(currentIndex < displayOrder.count - 1 ? 1 : 0.3)
+                .disabled(currentIndex >= displayOrder.count - 1)
+                .padding(.trailing, 20)
+            }
+
+            // Bottom bar: zoom slider
+            VStack {
+                Spacer()
+                HStack(spacing: 8) {
+                    Image(systemName: "minus.magnifyingglass")
+                        .foregroundStyle(.primary)
+                        .font(.caption)
+
+                    Slider(value: $scale, in: zoomRange)
+                        .frame(width: 120)
+                        .tint(.primary)
+
+                    Image(systemName: "plus.magnifyingglass")
+                        .foregroundStyle(.primary)
+                        .font(.caption)
+
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            scale = 1.0
+                            offset = .zero
+                        }
+                    } label: {
+                        Image(systemName: "1.magnifyingglass")
+                            .font(.caption)
+                            .foregroundStyle(.primary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Reset to fit")
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(.thinMaterial, in: Capsule())
+                .padding(.bottom, 20)
+            }
         }
     }
 
@@ -210,7 +247,7 @@ struct PhotoDetailView: View {
         VStack {
             HStack {
                 Spacer()
-                GlassCircleButton(systemImage: "xmark") {
+                OverlayCircleButton(systemImage: "xmark") {
                     dismiss()
                 }
                 .padding(20)
@@ -248,29 +285,36 @@ struct PhotoDetailView: View {
                         Image(systemName: "hare.fill")
                             .foregroundStyle(.white.opacity(0.5))
                             .font(.caption)
-                    }
 
-                    Button {
-                        toggleShuffle()
-                    } label: {
-                        Image(systemName: "shuffle")
-                            .font(.caption)
-                            .foregroundStyle(shuffle ? .orange : .white.opacity(0.5))
+                        Divider()
+                            .frame(height: 16)
+                            .opacity(0.0)
+
+                        Button {
+                            toggleShuffle()
+                        } label: {
+                            Image(systemName: "shuffle")
+                                .font(.caption)
+                                .foregroundStyle(shuffle ? .orange : .white.opacity(0.5))
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(.thinMaterial, in: Capsule())
 
                     Spacer()
 
                     HStack(spacing: 16) {
-                        GlassCircleButton(systemImage: "backward.fill", size: 36, font: .callout, shadow: false) {
+                        OverlayCircleButton(systemImage: "backward.fill", size: 36, font: .callout, shadow: false) {
                             navigatePrevious()
                         }
 
-                        GlassCircleButton(systemImage: isPlaying ? "pause.fill" : "play.fill", size: 48, font: .title3, shadow: false) {
+                        OverlayCircleButton(systemImage: isPlaying ? "pause.fill" : "play.fill", size: 48, font: .title3, shadow: false) {
                             togglePlayback()
                         }
 
-                        GlassCircleButton(systemImage: "forward.fill", size: 36, font: .callout, shadow: false) {
+                        OverlayCircleButton(systemImage: "forward.fill", size: 36, font: .callout, shadow: false) {
                             navigateNext()
                         }
                     }
@@ -339,7 +383,7 @@ struct PhotoDetailView: View {
             chromeVisible = true
         }
         chromeHideTask = Task {
-            try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: .seconds(4 ))
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.5)) {
                 chromeVisible = false
@@ -475,9 +519,6 @@ private struct PhotoPageView: View {
     @State private var image: NSImage?
     @State private var lastScaleValue: CGFloat = 1.0
 
-    private let minScale: CGFloat = 0.25
-    private let maxScale: CGFloat = 5.0
-
     var body: some View {
         GeometryReader { geometry in
             let viewSize = geometry.size
@@ -533,11 +574,11 @@ private struct PhotoPageView: View {
         MagnificationGesture()
             .onChanged { value in
                 let newScale = lastScaleValue * value
-                scale = max(minScale, min(maxScale, newScale))
+                scale = max(zoomRange.lowerBound, min(zoomRange.upperBound, newScale))
             }
             .onEnded { value in
                 let newScale = lastScaleValue * value
-                scale = max(minScale, min(maxScale, newScale))
+                scale = max(zoomRange.lowerBound, min(zoomRange.upperBound, newScale))
                 lastScaleValue = scale
             }
     }
@@ -587,6 +628,29 @@ struct InfoRow: View {
     }
 }
 
+// MARK: - OverlayCircleButton
+
+struct OverlayCircleButton: View {
+    let systemImage: String
+    var size: CGFloat = 44
+    var font: Font = .title
+    var shadow: Bool = true
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(font)
+                .fontWeight(.semibold)
+                .foregroundStyle(.primary)
+                .frame(width: size, height: size)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .background(.thinMaterial, in: Circle())
+    }
+}
+
 // MARK: - Previews
 
 #Preview("Photo Detail") {
@@ -607,9 +671,12 @@ struct InfoRow: View {
 }
 
 #Preview("Slideshow") {
-    let photos = (0..<10).map { i in
-        PhotoItem(url: URL(fileURLWithPath: "/tmp/slideshow_photo_\(i + 1).jpg"))
-    }
+    let photos = [
+        PhotoItem(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Light.heic")),
+        PhotoItem(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Dark.heic")),
+        PhotoItem(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Tree Dark.heic")),
+        PhotoItem(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Big Sur Coastline.heic")),
+    ]
     PhotoDetailView(
         photos: photos,
         isPresented: .constant(true),
