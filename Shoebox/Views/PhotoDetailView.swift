@@ -243,6 +243,8 @@ struct PhotoDetailView: View {
 
     // MARK: - Slideshow Overlay
 
+    private let foregroundOpacity = 0.6
+
     private var slideshowOverlay: some View {
         VStack {
             HStack {
@@ -268,22 +270,26 @@ struct PhotoDetailView: View {
                 } else {
                     Text("\(currentIndex + 1) / \(displayOrder.count)")
                         .font(.callout)
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.primary.opacity(foregroundOpacity))
                 }
 
                 HStack(spacing: 24) {
                     HStack(spacing: 6) {
                         Image(systemName: "tortoise.fill")
-                            .foregroundStyle(.white.opacity(0.5))
+                            .foregroundStyle(
+                                .primary.opacity(foregroundOpacity)
+                            )
                             .font(.caption)
                         Slider(value: $speed, in: 1...10, step: 0.5)
                             .frame(width: 80)
-                            .tint(.white.opacity(0.7))
+                            .tint(.primary.opacity(0.7))
                             .onChange(of: speed) { _, _ in
                                 if isPlaying { restartTimer() }
                             }
                         Image(systemName: "hare.fill")
-                            .foregroundStyle(.white.opacity(0.5))
+                            .foregroundStyle(
+                                .primary.opacity(foregroundOpacity)
+                            )
                             .font(.caption)
 
                         Divider()
@@ -291,19 +297,27 @@ struct PhotoDetailView: View {
                             .opacity(0.0)
 
                         Button {
-                            toggleShuffle()
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                toggleShuffle()
+                            }
                         } label: {
                             Image(systemName: "shuffle")
                                 .font(.caption)
-                                .foregroundStyle(shuffle ? .orange : .white.opacity(0.5))
+                                .foregroundStyle(.primary)
                         }
                         .buttonStyle(.plain)
+                        .padding(6)
+                        .contentShape(Circle())
+                        .background(
+                            shuffle ? Color.accentColor
+                                .opacity(0.3) : Color.clear,
+                            in: Circle()
+                        )
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 10)
                     .padding(.vertical, 10)
                     .background(.thinMaterial, in: Capsule())
-
-                    Spacer()
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                     HStack(spacing: 16) {
                         OverlayCircleButton(systemImage: "backward.fill", size: 36, font: .callout, shadow: false) {
@@ -318,19 +332,26 @@ struct PhotoDetailView: View {
                             navigateNext()
                         }
                     }
-
-                    Spacer()
+                    .fixedSize()
 
                     HStack(spacing: 8) {
                         Text(currentPhoto.name)
                             .font(.caption)
-                            .foregroundStyle(.white.opacity(0.5))
+                            .foregroundStyle(.primary.opacity(foregroundOpacity))
                             .lineLimit(1)
+                            .frame(maxWidth: 120)
 
-                        FavoriteButton(photo: currentPhoto, inactiveColor: .white.opacity(0.5))
-                            .font(.callout)
+                        FavoriteButton(
+                            photo: currentPhoto,
+                            inactiveColor: .primary.opacity(foregroundOpacity)
+                        )
+                            .buttonStyle(.plain)
                     }
-                    .frame(width: 160, alignment: .trailing)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .fixedSize()
+                    .background(.thinMaterial, in: Capsule())
+                    .frame(maxWidth: .infinity, alignment: .trailing)
                 }
             }
             .padding(.horizontal, 24)
