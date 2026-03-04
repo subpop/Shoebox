@@ -108,7 +108,6 @@ struct PhotoDetailView: View {
             } else {
                 detailOverlay
                     .opacity(chromeVisible ? 1 : 0)
-                    .ignoresSafeArea()
             }
 
             if showInfo && !slideshowMode {
@@ -267,7 +266,6 @@ struct PhotoDetailView: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 52)
                 Spacer()
             }
 
