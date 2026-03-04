@@ -50,156 +50,203 @@ struct ContentView: View {
         }
     }
 
-    private var detailCurrentPhoto: PhotoItem? {
-        guard let id = detailPhotoID else { return selectedPhoto }
-        return filteredPhotos.first { $0.id == id }
+    var body: some View {
+        navigationContent
+            .onAppear { handleOnAppear() }
+            .onChange(of: selectedPhoto) { _, newValue in
+                if let photo = newValue {
+                    detailPhotoID = photo.id
+                    showDetailInfo = false
+                }
+            }
+            .onChange(of: collectionManager.selectedCollectionID) { _, _ in handleCollectionChange() }
+            .onChange(of: photoLoader.photos) { _, photos in handlePhotosChange(photos) }
+            .onChange(of: searchText) { _, query in handleSearchChange(query) }
+            .onChange(of: collectionManager.selectedCollection?.recurseSubdirectories) { _, _ in
+                Task { @MainActor in
+                    if !collectionManager.isFavoritesSelected {
+                        loadSelectedCollection()
+                    }
+                }
+            }
+            .onChange(of: favoritesManager.favoriteIDs) { _, _ in handleFavoritesChange() }
+            .onChange(of: collectionManager.isUnlocked) { _, unlocked in handleUnlockChange(unlocked) }
+            .sheet(isPresented: $showUnlockSheet) {
+                UnlockSheet()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .openFolder)) { _ in
+                openFolder()
+            }
     }
 
-    var body: some View {
+    private var navigationContent: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             SidebarView()
         } detail: {
-            ZStack {
-                if collectionManager.isSelectedCollectionPasswordProtected && collectionManager.isLocked {
-                    LockedCollectionView()
-                } else if collectionManager.isFavoritesSelected || collectionManager.selectedCollection != nil {
-                    PhotoGridView(
-                        photos: filteredPhotos,
-                        isLoading: photoLoader.isLoading,
-                        selectedPhoto: $selectedPhoto,
-                        indexProgress: indexProgress,
-                        similaritySourceID: $similaritySourceID,
-                        onFindSimilar: { photoID in findSimilar(to: photoID) }
-                    )
-                    .searchable(text: $searchText, prompt: "Search by name or content")
-                } else {
-                    EmptyStateView()
-                }
-
-                if selectedPhoto != nil || showingSlideshow {
-                    PhotoDetailView(
-                        photos: filteredPhotos,
-                        isPresented: Binding(
-                            get: { selectedPhoto != nil || showingSlideshow },
-                            set: { if !$0 { selectedPhoto = nil; showingSlideshow = false } }
-                        ),
-                        showInfo: $showDetailInfo,
-                        scrolledPhotoID: $detailPhotoID,
-                        slideshowMode: showingSlideshow,
-                        onFindSimilar: { photoID in
-                            selectedPhoto = nil
-                            showingSlideshow = false
-                            findSimilar(to: photoID)
-                        }
-                    )
-                    .transition(.opacity)
-                }
-            }
+            detailContent
         }
-        .navigationTitle(collectionManager.isFavoritesSelected ? "Favorites" : collectionManager.selectedCollection?.name ?? "Shoebox")
-        .toolbar {
-            ToolbarItem {
-                lockToggleButton
-            }
-
-            ToolbarItem {
-                removeLockButton
-            }
-
-            if selectedPhoto == nil, !showingSlideshow, !(collectionManager.isSelectedCollectionPasswordProtected && collectionManager.isLocked), !filteredPhotos.isEmpty {
-                ToolbarItem {
-                    Button {
-                        detailPhotoID = filteredPhotos.first?.id
-                        showingSlideshow = true
-                    } label: {
-                        Label("Slideshow", systemImage: "play.fill")
-                    }
-                }
-            }
-        }
+        .navigationTitle(selectedPhoto == nil ? currentTitle : "")
+        .toolbar { toolbarContent }
         .frame(minWidth: 800, minHeight: 500)
         .toolbar(showingSlideshow ? .hidden : .automatic, for: .windowToolbar)
         .toolbarBackgroundVisibility(selectedPhoto != nil ? .hidden : .automatic, for: .windowToolbar)
-        .onChange(of: selectedPhoto) { _, newValue in
-            if let photo = newValue {
-                detailPhotoID = photo.id
-                showDetailInfo = false
+        .animation(.easeInOut(duration: 0.25), value: selectedPhoto != nil || showingSlideshow)
+    }
+
+    // MARK: - Toolbar Content
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        if selectedPhoto != nil {
+            ToolbarItem(placement: .navigation) {
+                toolbarTitleCapsule
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: selectedPhoto != nil || showingSlideshow)
-        .onAppear {
-            folderWatcher = FolderWatcher { [self] in
-                loadSelectedCollection()
-            }
-            loadSelectedCollection()
-            Task {
-                await ImageIndexer.shared.setProgressHandler { progress in
-                    Task { @MainActor in
-                        indexProgress = progress
-                    }
+        ToolbarItem {
+            lockToggleButton
+        }
+        ToolbarItem {
+            removeLockButton
+        }
+        if selectedPhoto == nil, !showingSlideshow, !(collectionManager.isSelectedCollectionPasswordProtected && collectionManager.isLocked), !filteredPhotos.isEmpty {
+            ToolbarItem {
+                Button {
+                    detailPhotoID = filteredPhotos.first?.id
+                    showingSlideshow = true
+                } label: {
+                    Label("Slideshow", systemImage: "play.fill")
                 }
             }
         }
-        .onChange(of: collectionManager.selectedCollectionID) { _, _ in
-            selectedPhoto = nil
-            showingSlideshow = false
+    }
+
+    // MARK: - Event Handlers
+
+    private func handleOnAppear() {
+        folderWatcher = FolderWatcher { [self] in
+            loadSelectedCollection()
+        }
+        loadSelectedCollection()
+        Task {
+            await ImageIndexer.shared.setProgressHandler { progress in
+                Task { @MainActor in
+                    indexProgress = progress
+                }
+            }
+        }
+    }
+
+    private func handleCollectionChange() {
+        selectedPhoto = nil
+        showingSlideshow = false
+        similaritySourceID = nil
+        similarityResults = []
+        Task { @MainActor in
+            loadSelectedCollection()
+        }
+    }
+
+    private func handlePhotosChange(_ photos: [PhotoItem]) {
+        Task { @MainActor in
+            if collectionManager.isFavoritesSelected {
+                collectionManager.exportFavoritesForWidget(photos: photos)
+            } else if let id = collectionManager.selectedCollectionID {
+                collectionManager.updatePhotoCount(for: id, count: photos.count)
+                collectionManager.exportForWidget(photos: photos)
+            }
+        }
+        startIndexing(photos: photos)
+    }
+
+    private func handleSearchChange(_ query: String) {
+        if !query.isEmpty {
             similaritySourceID = nil
             similarityResults = []
-            Task { @MainActor in
-                loadSelectedCollection()
+        }
+        updateIndexSearch(query: query)
+    }
+
+    private func handleFavoritesChange() {
+        Task { @MainActor in
+            if collectionManager.isFavoritesSelected {
+                loadFavorites()
+            } else {
+                exportFavoritesInBackground()
             }
         }
-        .onChange(of: photoLoader.photos) { _, photos in
-            Task { @MainActor in
-                if collectionManager.isFavoritesSelected {
-                    collectionManager.exportFavoritesForWidget(photos: photos)
-                } else if let id = collectionManager.selectedCollectionID {
-                    collectionManager.updatePhotoCount(for: id, count: photos.count)
-                    collectionManager.exportForWidget(photos: photos)
-                }
+    }
+
+    private func handleUnlockChange(_ unlocked: Bool) {
+        if unlocked && pendingRemoveLock {
+            pendingRemoveLock = false
+            collectionManager.removeLockFromSelectedCollection()
+        }
+        if !unlocked && collectionManager.isSelectedCollectionPasswordProtected {
+            selectedPhoto = nil
+            showingSlideshow = false
+        }
+        loadSelectedCollection()
+    }
+
+    // MARK: - Detail Content
+
+    private var detailContent: some View {
+        ZStack {
+            if collectionManager.isSelectedCollectionPasswordProtected && collectionManager.isLocked {
+                LockedCollectionView()
+            } else if collectionManager.isFavoritesSelected || collectionManager.selectedCollection != nil {
+                PhotoGridView(
+                    photos: filteredPhotos,
+                    isLoading: photoLoader.isLoading,
+                    selectedPhoto: $selectedPhoto,
+                    indexProgress: indexProgress,
+                    similaritySourceID: $similaritySourceID,
+                    onFindSimilar: { photoID in findSimilar(to: photoID) }
+                )
+                .searchable(text: $searchText, prompt: "Search by name or content")
+            } else {
+                EmptyStateView()
             }
-            startIndexing(photos: photos)
-        }
-        .onChange(of: searchText) { _, query in
-            if !query.isEmpty {
-                similaritySourceID = nil
-                similarityResults = []
-            }
-            updateIndexSearch(query: query)
-        }
-        .onChange(of: collectionManager.selectedCollection?.recurseSubdirectories) { _, _ in
-            Task { @MainActor in
-                if !collectionManager.isFavoritesSelected {
-                    loadSelectedCollection()
-                }
-            }
-        }
-        .onChange(of: favoritesManager.favoriteIDs) { _, _ in
-            Task { @MainActor in
-                if collectionManager.isFavoritesSelected {
-                    loadFavorites()
-                } else {
-                    exportFavoritesInBackground()
-                }
+
+            if selectedPhoto != nil || showingSlideshow {
+                PhotoDetailView(
+                    photos: filteredPhotos,
+                    isPresented: Binding(
+                        get: { selectedPhoto != nil || showingSlideshow },
+                        set: { if !$0 { selectedPhoto = nil; showingSlideshow = false } }
+                    ),
+                    showInfo: $showDetailInfo,
+                    scrolledPhotoID: $detailPhotoID,
+                    slideshowMode: showingSlideshow,
+                    onFindSimilar: { photoID in
+                        selectedPhoto = nil
+                        showingSlideshow = false
+                        findSimilar(to: photoID)
+                    }
+                )
+                .transition(.opacity)
             }
         }
-        .onChange(of: collectionManager.isUnlocked) { _, unlocked in
-            if unlocked && pendingRemoveLock {
-                pendingRemoveLock = false
-                collectionManager.removeLockFromSelectedCollection()
-            }
-            if !unlocked && collectionManager.isSelectedCollectionPasswordProtected {
-                selectedPhoto = nil
-                showingSlideshow = false
-            }
-            loadSelectedCollection()
+    }
+
+    // MARK: - Toolbar Title
+
+    private var currentTitle: String {
+        if selectedPhoto != nil || showingSlideshow,
+           let id = detailPhotoID,
+           let photo = filteredPhotos.first(where: { $0.id == id }) {
+            photo.name
+        } else {
+            collectionManager.isFavoritesSelected ? "Favorites" : collectionManager.selectedCollection?.name ?? "Shoebox"
         }
-        .sheet(isPresented: $showUnlockSheet) {
-            UnlockSheet()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .openFolder)) { _ in
-            openFolder()
-        }
+    }
+
+    private var toolbarTitleCapsule: some View {
+        Text(currentTitle)
+            .font(.title3)
+            .fontWeight(.semibold)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
     }
 
     // MARK: - Lock Toolbar Buttons
