@@ -95,8 +95,6 @@ struct PhotoDetailView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
-
             imageArea
                 .ignoresSafeArea()
                 .onGeometryChange(for: CGSize.self, of: { $0.size }) { viewSize = $0 }
@@ -161,7 +159,18 @@ struct PhotoDetailView: View {
 
                 if let photo = detailCurrentPhoto {
                     ToolbarItemGroup(placement: .primaryAction) {
-                        FavoriteButton(photo: photo)
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                favoritesManager.toggleFavorite(photo)
+                            }
+                        } label: {
+                            Label("Favorite",systemImage: favoritesManager.isFavorite(photo) ? "heart.fill" : "heart")
+                                .foregroundStyle(
+                                    favoritesManager
+                                        .isFavorite(photo) ? .pink : .primary
+                                )
+                        }
+                        .help("Favorite")
 
                         ShareButton(url: photo.url)
                             .frame(width: 28, height: 22)
@@ -170,15 +179,14 @@ struct PhotoDetailView: View {
                         Button {
                             showInfo.toggle()
                         } label: {
-                            Image(
-                                systemName: showInfo ? "info.circle.fill" : "info.circle"
-                            )
+                            Label("Info",systemImage: showInfo ? "info.circle.fill" : "info.circle")
                         }
                         .help("Info")
                     }
                 }
             }
         }
+        .background(.background)
         .onContinuousHover { phase in
             switch phase {
             case .active:

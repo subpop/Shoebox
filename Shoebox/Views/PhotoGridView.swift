@@ -22,6 +22,10 @@ struct PhotoGridView: View {
     @Binding var selectedPhoto: PhotoItem?
     var indexProgress = IndexProgress(completed: 0, total: 0)
     @Binding var similaritySourceID: String?
+    @Binding var showingSlideshow: Bool
+    @Binding var detailPhotoID: PhotoItem.ID?
+    @Binding var showUnlockSheet: Bool
+    @Binding var pendingRemoveLock: Bool
     var onFindSimilar: ((String) -> Void)?
     @EnvironmentObject var collectionManager: CollectionManager
     @EnvironmentObject var favoritesManager: FavoritesManager
@@ -51,6 +55,8 @@ struct PhotoGridView: View {
         .safeAreaBar(edge: .bottom) {
             toolbar
         }
+        .navigationTitle(selectedPhoto == nil ? currentTitle : "")
+        .toolbar { windowToolbarContent }
     }
 
     // MARK: - Toolbar
@@ -95,6 +101,101 @@ struct PhotoGridView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    // MARK: - Window Toolbar Content
+
+    @ToolbarContentBuilder
+    var windowToolbarContent: some ToolbarContent {
+        if selectedPhoto != nil {
+            ToolbarItem(placement: .navigation) {
+                toolbarTitleCapsule
+            }
+        }
+
+        ToolbarItemGroup(placement: .primaryAction) {
+            lockToggleButton
+            removeLockButton
+
+            if selectedPhoto == nil, !showingSlideshow, !(collectionManager.isSelectedCollectionPasswordProtected && collectionManager.isLocked), !photos.isEmpty {
+                Button {
+                    detailPhotoID = photos.first?.id
+                    showingSlideshow = true
+                } label: {
+                    Label("Slideshow", systemImage: "play.fill")
+                }
+            }
+        }
+    }
+
+    private var currentTitle: String {
+        if selectedPhoto != nil || showingSlideshow,
+           let id = detailPhotoID,
+           let photo = photos.first(where: { $0.id == id }) {
+            photo.name
+        } else {
+            collectionManager.isFavoritesSelected ? "Favorites" : collectionManager.selectedCollection?.name ?? "Shoebox"
+        }
+    }
+
+    private var toolbarTitleCapsule: some View {
+        Text(currentTitle)
+            .font(.title3)
+            .fontWeight(.semibold)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private var lockToggleButton: some View {
+        if collectionManager.isLocked {
+            Button {
+                triggerUnlock()
+            } label: {
+                Label("Unlock", systemImage: "lock.fill")
+            }
+            .help("Unlock All Collections")
+        } else {
+            Button {
+                if !collectionManager.isSelectedCollectionPasswordProtected {
+                    collectionManager.addLockToSelectedCollection()
+                }
+                collectionManager.lock()
+            } label: {
+                Label("Lock", systemImage: "lock.open")
+            }
+            .help("Lock All Collections")
+        }
+    }
+
+    @ViewBuilder
+    private var removeLockButton: some View {
+        if collectionManager.isSelectedCollectionPasswordProtected {
+            Button {
+                handleRemoveLock()
+            } label: {
+                Label("Remove Lock", systemImage: "lock.slash")
+            }
+            .help("Remove Lock from This Collection")
+        }
+    }
+
+    private func triggerUnlock() {
+        switch collectionManager.lockMethod {
+        case .loginPassword:
+            Task { await collectionManager.authenticateWithLoginPassword() }
+        case .customPassword:
+            showUnlockSheet = true
+        }
+    }
+
+    private func handleRemoveLock() {
+        if collectionManager.isUnlocked {
+            collectionManager.removeLockFromSelectedCollection()
+        } else {
+            pendingRemoveLock = true
+            triggerUnlock()
+        }
     }
 
     // MARK: - Grid
@@ -360,7 +461,11 @@ private func samplePhotos(count: Int = 12) -> [PhotoItem] {
         photos: samplePhotos(),
         isLoading: false,
         selectedPhoto: .constant(nil),
-        similaritySourceID: .constant(nil)
+        similaritySourceID: .constant(nil),
+        showingSlideshow: .constant(false),
+        detailPhotoID: .constant(nil),
+        showUnlockSheet: .constant(false),
+        pendingRemoveLock: .constant(false)
     )
     .environmentObject(CollectionManager())
     .environmentObject(FavoritesManager())
@@ -372,7 +477,11 @@ private func samplePhotos(count: Int = 12) -> [PhotoItem] {
         photos: [],
         isLoading: true,
         selectedPhoto: .constant(nil),
-        similaritySourceID: .constant(nil)
+        similaritySourceID: .constant(nil),
+        showingSlideshow: .constant(false),
+        detailPhotoID: .constant(nil),
+        showUnlockSheet: .constant(false),
+        pendingRemoveLock: .constant(false)
     )
     .environmentObject(CollectionManager())
     .environmentObject(FavoritesManager())
@@ -384,7 +493,11 @@ private func samplePhotos(count: Int = 12) -> [PhotoItem] {
         photos: [],
         isLoading: false,
         selectedPhoto: .constant(nil),
-        similaritySourceID: .constant(nil)
+        similaritySourceID: .constant(nil),
+        showingSlideshow: .constant(false),
+        detailPhotoID: .constant(nil),
+        showUnlockSheet: .constant(false),
+        pendingRemoveLock: .constant(false)
     )
     .environmentObject(CollectionManager())
     .environmentObject(FavoritesManager())
