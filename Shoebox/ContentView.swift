@@ -116,23 +116,6 @@ struct ContentView: View {
                     }
                 }
             }
-
-            if selectedPhoto != nil, !showingSlideshow, let photo = detailCurrentPhoto {
-                ToolbarItemGroup {
-                    FavoriteButton(photo: photo)
-
-                    ShareButton(url: photo.url)
-                        .frame(width: 28, height: 22)
-                        .help("Share")
-
-                    Button {
-                        showDetailInfo.toggle()
-                    } label: {
-                        Image(systemName: showDetailInfo ? "info.circle.fill" : "info.circle")
-                    }
-                    .help("Info")
-                }
-            }
         }
         .frame(minWidth: 800, minHeight: 500)
         .toolbar(showingSlideshow ? .hidden : .automatic, for: .windowToolbar)

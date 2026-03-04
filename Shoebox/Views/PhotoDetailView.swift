@@ -15,6 +15,7 @@
 import SwiftUI
 
 private let zoomRange: ClosedRange<CGFloat> = 0.1...5.0
+private let zoomStep: CGFloat = 0.25
 
 struct PhotoDetailView: View {
     let photos: [PhotoItem]
@@ -32,6 +33,7 @@ struct PhotoDetailView: View {
     @State private var chromeVisible = true
     @State private var chromeHideTask: Task<Void, Never>?
     @FocusState private var isFocused: Bool
+    @State private var viewSize: CGSize = .zero
 
     @State private var isPlaying = true
     @State private var speed: Double = 7.0
@@ -39,6 +41,11 @@ struct PhotoDetailView: View {
     @State private var slideshowTask: Task<Void, Never>?
 
     private var interval: TimeInterval { 11.0 - speed }
+
+    private var detailCurrentPhoto: PhotoItem? {
+        guard let id = scrolledPhotoID else { return nil }
+        return displayOrder.first { $0.id == id }
+    }
 
     init(
         photos: [PhotoItem],
@@ -61,6 +68,23 @@ struct PhotoDetailView: View {
         displayOrder.firstIndex(where: { $0.id == scrolledPhotoID }) ?? 0
     }
 
+    private var containScale: CGFloat {
+        guard let image = currentImage else { return 1.0 }
+        let imageSize: CGSize
+        if let rep = image.representations.first {
+            imageSize = CGSize(width: CGFloat(rep.pixelsWide), height: CGFloat(rep.pixelsHigh))
+        } else {
+            imageSize = image.size
+        }
+        guard imageSize.width > 0, imageSize.height > 0,
+              viewSize.width > 0, viewSize.height > 0 else { return 1.0 }
+        let scaleX = viewSize.width / imageSize.width
+        let scaleY = viewSize.height / imageSize.height
+        let fill = max(scaleX, scaleY)
+        guard fill > 0 else { return 1.0 }
+        return min(scaleX, scaleY) / fill
+    }
+
     private var currentPhoto: PhotoItem {
         let index = currentIndex
         guard index >= 0, index < displayOrder.count else {
@@ -75,6 +99,7 @@ struct PhotoDetailView: View {
 
             imageArea
                 .ignoresSafeArea()
+                .onGeometryChange(for: CGSize.self, of: { $0.size }) { viewSize = $0 }
 
             if slideshowMode {
                 slideshowOverlay
@@ -93,6 +118,68 @@ struct PhotoDetailView: View {
         .focusable()
         .focused($isFocused)
         .focusEffectDisabled()
+        .toolbar {
+            if !slideshowMode {
+                ToolbarItemGroup(placement: .secondaryAction) {
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            scale = max(zoomRange.lowerBound, scale - zoomStep)
+                        }
+                    } label: {
+                        Label("Zoom Out", systemImage: "minus.magnifyingglass")
+                    }
+                    .help("Zoom Out")
+
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            scale = 1.0
+                            offset = .zero
+                        }
+                    } label: {
+                        Label("Reset to Fit", systemImage: "1.magnifyingglass")
+                    }
+                    .help("Reset to Fit")
+
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            scale = min(zoomRange.upperBound, scale + zoomStep)
+                        }
+                    } label: {
+                        Label("Zoom In", systemImage: "plus.magnifyingglass")
+                    }
+                    .help("Zoom In")
+
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            scale = containScale
+                            offset = .zero
+                        }
+                    } label: {
+                        Label("Show Entire Photo", systemImage: "arrow.down.right.and.arrow.up.left")
+                    }
+                    .help("Show Entire Photo")
+                }
+
+                if let photo = detailCurrentPhoto {
+                    ToolbarItemGroup(placement: .primaryAction) {
+                        FavoriteButton(photo: photo)
+
+                        ShareButton(url: photo.url)
+                            .frame(width: 28, height: 22)
+                            .help("Share")
+
+                        Button {
+                            showInfo.toggle()
+                        } label: {
+                            Image(
+                                systemName: showInfo ? "info.circle.fill" : "info.circle"
+                            )
+                        }
+                        .help("Info")
+                    }
+                }
+            }
+        }
         .onContinuousHover { phase in
             switch phase {
             case .active:
@@ -114,7 +201,6 @@ struct PhotoDetailView: View {
             chromeHideTask?.cancel()
         }
         .onChange(of: scrolledPhotoID) {
-            scale = 1.0
             offset = .zero
             loadCurrentImage()
         }
@@ -204,40 +290,6 @@ struct PhotoDetailView: View {
                 .padding(.trailing, 20)
             }
 
-            // Bottom bar: zoom slider
-            VStack {
-                Spacer()
-                HStack(spacing: 8) {
-                    Image(systemName: "minus.magnifyingglass")
-                        .foregroundStyle(.primary)
-                        .font(.caption)
-
-                    Slider(value: $scale, in: zoomRange)
-                        .frame(width: 120)
-                        .tint(.primary)
-
-                    Image(systemName: "plus.magnifyingglass")
-                        .foregroundStyle(.primary)
-                        .font(.caption)
-
-                    Button {
-                        withAnimation(.spring(duration: 0.3)) {
-                            scale = 1.0
-                            offset = .zero
-                        }
-                    } label: {
-                        Image(systemName: "1.magnifyingglass")
-                            .font(.caption)
-                            .foregroundStyle(.primary)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Reset to fit")
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(.thinMaterial, in: Capsule())
-                .padding(.bottom, 20)
-            }
         }
     }
 
