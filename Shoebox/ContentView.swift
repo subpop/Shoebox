@@ -85,6 +85,8 @@ struct ContentView: View {
         } detail: {
             detailContent
         }
+        .navigationTitle(selectedPhoto == nil ? currentTitle : "")
+        .toolbar { windowToolbarContent }
         .frame(minWidth: 800, minHeight: 500)
         .toolbar(showingSlideshow ? .hidden : .automatic, for: .windowToolbar)
         .toolbarBackgroundVisibility(selectedPhoto != nil ? .hidden : .automatic, for: .windowToolbar)
@@ -159,6 +161,101 @@ struct ContentView: View {
         loadSelectedCollection()
     }
 
+    // MARK: - Window Toolbar Content
+
+    @ToolbarContentBuilder
+    private var windowToolbarContent: some ToolbarContent {
+        if selectedPhoto != nil {
+            ToolbarItem(placement: .navigation) {
+                toolbarTitleCapsule
+            }
+        }
+
+        ToolbarItemGroup(placement: .primaryAction) {
+            lockToggleButton
+            removeLockButton
+
+            if selectedPhoto == nil, !showingSlideshow, !(collectionManager.isSelectedCollectionPasswordProtected && collectionManager.isLocked), !filteredPhotos.isEmpty {
+                Button {
+                    detailPhotoID = filteredPhotos.first?.id
+                    showingSlideshow = true
+                } label: {
+                    Label("Slideshow", systemImage: "play.fill")
+                }
+            }
+        }
+    }
+
+    private var currentTitle: String {
+        if selectedPhoto != nil || showingSlideshow,
+           let id = detailPhotoID,
+           let photo = filteredPhotos.first(where: { $0.id == id }) {
+            photo.name
+        } else {
+            collectionManager.isFavoritesSelected ? "Favorites" : collectionManager.selectedCollection?.name ?? "Shoebox"
+        }
+    }
+
+    private var toolbarTitleCapsule: some View {
+        Text(currentTitle)
+            .font(.title3)
+            .fontWeight(.semibold)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private var lockToggleButton: some View {
+        if collectionManager.isLocked {
+            Button {
+                triggerUnlock()
+            } label: {
+                Label("Unlock", systemImage: "lock.fill")
+            }
+            .help("Unlock All Collections")
+        } else {
+            Button {
+                if !collectionManager.isSelectedCollectionPasswordProtected {
+                    collectionManager.addLockToSelectedCollection()
+                }
+                collectionManager.lock()
+            } label: {
+                Label("Lock", systemImage: "lock.open")
+            }
+            .help("Lock All Collections")
+        }
+    }
+
+    @ViewBuilder
+    private var removeLockButton: some View {
+        if collectionManager.isSelectedCollectionPasswordProtected {
+            Button {
+                handleRemoveLock()
+            } label: {
+                Label("Remove Lock", systemImage: "lock.slash")
+            }
+            .help("Remove Lock from This Collection")
+        }
+    }
+
+    private func triggerUnlock() {
+        switch collectionManager.lockMethod {
+        case .loginPassword:
+            Task { await collectionManager.authenticateWithLoginPassword() }
+        case .customPassword:
+            showUnlockSheet = true
+        }
+    }
+
+    private func handleRemoveLock() {
+        if collectionManager.isUnlocked {
+            collectionManager.removeLockFromSelectedCollection()
+        } else {
+            pendingRemoveLock = true
+            triggerUnlock()
+        }
+    }
+
     // MARK: - Detail Content
 
     private var detailContent: some View {
@@ -172,10 +269,6 @@ struct ContentView: View {
                     selectedPhoto: $selectedPhoto,
                     indexProgress: indexProgress,
                     similaritySourceID: $similaritySourceID,
-                    showingSlideshow: $showingSlideshow,
-                    detailPhotoID: $detailPhotoID,
-                    showUnlockSheet: $showUnlockSheet,
-                    pendingRemoveLock: $pendingRemoveLock,
                     onFindSimilar: { photoID in findSimilar(to: photoID) }
                 )
                 .searchable(text: $searchText, prompt: "Search by name or content")
