@@ -36,6 +36,7 @@ struct ContentView: View {
     @State private var similarityResults: [String] = []
     @State private var showUnlockSheet = false
     @State private var pendingRemoveLock = false
+    @State private var preSlideshowColumnVisibility: NavigationSplitViewVisibility?
 
     var filteredPhotos: [PhotoItem] {
         if similaritySourceID != nil {
@@ -70,6 +71,23 @@ struct ContentView: View {
                 }
             }
             .onChange(of: favoritesManager.favoriteIDs) { _, _ in handleFavoritesChange() }
+            .onChange(of: showingSlideshow) { _, isSlideshow in
+                if isSlideshow {
+                    preSlideshowColumnVisibility = columnVisibility
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        columnVisibility = .detailOnly
+                    }
+                } else if let previous = preSlideshowColumnVisibility {
+                    preSlideshowColumnVisibility = nil
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        columnVisibility = previous
+                    }
+                }
+            }
             .onChange(of: collectionManager.isUnlocked) { _, unlocked in handleUnlockChange(unlocked) }
             .sheet(isPresented: $showUnlockSheet) {
                 UnlockSheet()
@@ -84,13 +102,13 @@ struct ContentView: View {
             SidebarView()
         } detail: {
             detailContent
+                .animation(.easeInOut(duration: 0.25), value: selectedPhoto != nil || showingSlideshow)
         }
         .navigationTitle(selectedPhoto == nil ? currentTitle : "")
         .toolbar { windowToolbarContent }
         .frame(minWidth: 800, minHeight: 500)
         .toolbar(showingSlideshow ? .hidden : .automatic, for: .windowToolbar)
         .toolbarBackgroundVisibility(selectedPhoto != nil ? .hidden : .automatic, for: .windowToolbar)
-        .animation(.easeInOut(duration: 0.25), value: selectedPhoto != nil || showingSlideshow)
     }
 
     // MARK: - Event Handlers
