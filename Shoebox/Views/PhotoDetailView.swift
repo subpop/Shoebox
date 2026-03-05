@@ -22,6 +22,7 @@ struct PhotoDetailView: View {
     @Binding var isPresented: Bool
     @Binding var showInfo: Bool
     @Binding var scrolledPhotoID: PhotoItem.ID?
+    @Binding var chromeVisible: Bool
     let slideshowMode: Bool
     var onFindSimilar: ((String) -> Void)?
     @EnvironmentObject var favoritesManager: FavoritesManager
@@ -30,7 +31,6 @@ struct PhotoDetailView: View {
     @State private var currentImage: NSImage?
     @State private var scale: CGFloat = 1.0
     @State private var offset: CGSize = .zero
-    @State private var chromeVisible = true
     @State private var chromeHideTask: Task<Void, Never>?
     @FocusState private var isFocused: Bool
     @State private var viewSize: CGSize = .zero
@@ -52,6 +52,7 @@ struct PhotoDetailView: View {
         isPresented: Binding<Bool>,
         showInfo: Binding<Bool>,
         scrolledPhotoID: Binding<PhotoItem.ID?>,
+        chromeVisible: Binding<Bool>,
         slideshowMode: Bool = false,
         onFindSimilar: ((String) -> Void)? = nil
     ) {
@@ -59,6 +60,7 @@ struct PhotoDetailView: View {
         self._isPresented = isPresented
         self._showInfo = showInfo
         self._scrolledPhotoID = scrolledPhotoID
+        self._chromeVisible = chromeVisible
         self.slideshowMode = slideshowMode
         self.onFindSimilar = onFindSimilar
         self._displayOrder = State(initialValue: photos)
@@ -164,7 +166,7 @@ struct PhotoDetailView: View {
                                 favoritesManager.toggleFavorite(photo)
                             }
                         } label: {
-                            Label("Favorite",systemImage: favoritesManager.isFavorite(photo) ? "heart.fill" : "heart")
+                            Label("Favorite", systemImage: favoritesManager.isFavorite(photo) ? "heart.fill" : "heart")
                                 .foregroundStyle(
                                     favoritesManager
                                         .isFavorite(photo) ? .pink : .primary
@@ -179,7 +181,7 @@ struct PhotoDetailView: View {
                         Button {
                             showInfo.toggle()
                         } label: {
-                            Label("Info",systemImage: showInfo ? "info.circle.fill" : "info.circle")
+                            Label("Info", systemImage: showInfo ? "info.circle.fill" : "info.circle")
                         }
                         .help("Info")
                     }
@@ -259,7 +261,6 @@ struct PhotoDetailView: View {
 
     private var detailOverlay: some View {
         ZStack {
-            // Top bar: find similar + close
             VStack {
                 HStack {
                     if onFindSimilar != nil {
@@ -277,7 +278,6 @@ struct PhotoDetailView: View {
                 Spacer()
             }
 
-            // Navigation arrows: vertically centered
             HStack {
                 OverlayCircleButton(systemImage: "chevron.left") {
                     navigatePrevious()
@@ -462,7 +462,7 @@ struct PhotoDetailView: View {
             chromeVisible = true
         }
         chromeHideTask = Task {
-            try? await Task.sleep(for: .seconds(4 ))
+            try? await Task.sleep(for: .seconds(4))
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.5)) {
                 chromeVisible = false
@@ -574,6 +574,8 @@ struct PhotoDetailView: View {
         chromeHideTask?.cancel()
         isPresented = false
     }
+
+    // MARK: - Image Loading
 
     private func loadCurrentImage() {
         currentImage = nil
@@ -743,7 +745,8 @@ struct OverlayCircleButton: View {
         photos: photos,
         isPresented: .constant(true),
         showInfo: .constant(false),
-        scrolledPhotoID: .constant(photos[0].id)
+        scrolledPhotoID: .constant(photos[0].id),
+        chromeVisible: .constant(true)
     )
     .environmentObject(FavoritesManager())
     .frame(width: 900, height: 600)
@@ -761,6 +764,7 @@ struct OverlayCircleButton: View {
         isPresented: .constant(true),
         showInfo: .constant(false),
         scrolledPhotoID: .constant(photos[0].id),
+        chromeVisible: .constant(true),
         slideshowMode: true
     )
     .environmentObject(FavoritesManager())

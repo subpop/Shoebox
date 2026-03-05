@@ -37,6 +37,7 @@ struct ContentView: View {
     @State private var showUnlockSheet = false
     @State private var pendingRemoveLock = false
     @State private var preSlideshowColumnVisibility: NavigationSplitViewVisibility?
+    @State private var detailChromeVisible = true
 
     var filteredPhotos: [PhotoItem] {
         if similaritySourceID != nil {
@@ -58,6 +59,9 @@ struct ContentView: View {
                 if let photo = newValue {
                     detailPhotoID = photo.id
                     showDetailInfo = false
+                    detailChromeVisible = true
+                } else {
+                    detailChromeVisible = true
                 }
             }
             .onChange(of: collectionManager.selectedCollectionID) { _, _ in handleCollectionChange() }
@@ -107,7 +111,7 @@ struct ContentView: View {
         .navigationTitle(selectedPhoto == nil ? currentTitle : "")
         .toolbar { windowToolbarContent }
         .frame(minWidth: 800, minHeight: 500)
-        .toolbar(showingSlideshow ? .hidden : .automatic, for: .windowToolbar)
+        .toolbar(showingSlideshow || (selectedPhoto != nil && !detailChromeVisible) ? .hidden : .automatic, for: .windowToolbar)
         .toolbarBackgroundVisibility(selectedPhoto != nil ? .hidden : .automatic, for: .windowToolbar)
     }
 
@@ -289,7 +293,6 @@ struct ContentView: View {
                     similaritySourceID: $similaritySourceID,
                     onFindSimilar: { photoID in findSimilar(to: photoID) }
                 )
-                .searchable(text: $searchText, prompt: "Search by name or content")
             } else {
                 EmptyStateView()
             }
@@ -303,6 +306,7 @@ struct ContentView: View {
                     ),
                     showInfo: $showDetailInfo,
                     scrolledPhotoID: $detailPhotoID,
+                    chromeVisible: $detailChromeVisible,
                     slideshowMode: showingSlideshow,
                     onFindSimilar: { photoID in
                         selectedPhoto = nil
@@ -313,7 +317,10 @@ struct ContentView: View {
                 .transition(.opacity)
             }
         }
+        .searchable(text: $searchText, prompt: "Search by name or content")
     }
+
+    // MARK: - Collection Loading
 
     private func loadSelectedCollection() {
         guard let id = collectionManager.selectedCollectionID else {
@@ -360,7 +367,6 @@ struct ContentView: View {
     private func exportFavoritesInBackground() {
         let favoriteIDs = favoritesManager.favoriteIDs
         guard !favoriteIDs.isEmpty else {
-            // Clean up the directory if no favorites remain
             if let dir = ShoeboxKit.widgetThumbnailsURL(forCollectionID: CollectionManager.favoritesCollectionID) {
                 try? FileManager.default.removeItem(at: dir)
             }
@@ -369,7 +375,6 @@ struct ContentView: View {
         let backgroundLoader = PhotoLoader()
         let sources = collectionManager.startAccessingAll()
         backgroundLoader.loadFavorites(from: sources, matching: favoriteIDs)
-        // Observe when loading completes to trigger export
         favoritesExportObservation?.cancel()
         favoritesExportLoader = backgroundLoader
         favoritesExportObservation = backgroundLoader.$photos
