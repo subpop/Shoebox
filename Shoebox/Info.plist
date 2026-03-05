@@ -3,6 +3,6 @@
 <plist version="1.0">
 <dict>
 	<key>AppGroupIdentifier</key>
-	<string>$(DEVELOPMENT_TEAM).group.app.subpop.Shoebox</string>
+	<string>group.app.subpop.Shoebox</string>
 </dict>
 </plist>
