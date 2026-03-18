@@ -7,9 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A100010200000000000005 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A100020300000000000001 /* WidgetKit.framework */; };
-		A100010200000000000006 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A100020300000000000002 /* SwiftUI.framework */; };
-		A100010300000000000001 /* ShoeboxWidgetExtension.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = A100020400000000000002 /* ShoeboxWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3BAE773A2F6AF6E2000EC1E6 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A100020300000000000001 /* WidgetKit.framework */; };
+		3BAE773B2F6AF6E2000EC1E6 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A100020300000000000002 /* SwiftUI.framework */; };
+		3BAE77482F6AF6E7000EC1E6 /* SlideshowExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3BAE77392F6AF6E2000EC1E6 /* SlideshowExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -20,23 +20,33 @@
 			remoteGlobalIDString = A100040100000000000001;
 			remoteInfo = Shoebox;
 		};
-		A100050100000000000001 /* PBXContainerItemProxy */ = {
+		3BAE77462F6AF6E7000EC1E6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A100060100000000000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = A100040200000000000001;
-			remoteInfo = ShoeboxWidgetExtension;
+			remoteGlobalIDString = 3BAE77382F6AF6E2000EC1E6;
+			remoteInfo = SlideshowExtension;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		3BAE77492F6AF6E7000EC1E6 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				3BAE77482F6AF6E7000EC1E6 /* SlideshowExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A100030100000000000004 /* Embed ExtensionKit Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = Contents/Extensions;
 			dstSubfolderSpec = 1;
 			files = (
-				A100010300000000000001 /* ShoeboxWidgetExtension.appex in Embed ExtensionKit Extensions */,
 			);
 			name = "Embed ExtensionKit Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -45,11 +55,11 @@
 
 /* Begin PBXFileReference section */
 		3B22F2DF2F53327E00DBE8B5 /* ShoeboxTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShoeboxTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3BAE77392F6AF6E2000EC1E6 /* SlideshowExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SlideshowExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		3BB8CAF82F3FB0F900F952D9 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		A100020300000000000001 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		A100020300000000000002 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		A100020400000000000001 /* Shoebox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Shoebox.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A100020400000000000002 /* ShoeboxWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = ShoeboxWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -60,27 +70,34 @@
 			);
 			target = A100040100000000000001 /* Shoebox */;
 		};
-		3B32A7232F4023FB00A797F6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Models/PhotoCollection.swift,
-			);
-			target = A100040200000000000001 /* ShoeboxWidgetExtension */;
-		};
-		3B32A7322F40240700A797F6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		3BAE774D2F6AF6E7000EC1E6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = A100040200000000000001 /* ShoeboxWidgetExtension */;
+			target = 3BAE77382F6AF6E2000EC1E6 /* SlideshowExtension */;
+		};
+		3BAE77512F6AF89A000EC1E6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				ShoeboxKit.swift,
+			);
+			target = 3BAE77382F6AF6E2000EC1E6 /* SlideshowExtension */;
+		};
+		3BAE77532F6AFA3D000EC1E6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Models/PhotoCollection.swift,
+			);
+			target = 3BAE77382F6AF6E2000EC1E6 /* SlideshowExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3B22F2E02F53327E00DBE8B5 /* ShoeboxTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ShoeboxTests; sourceTree = "<group>"; };
-		3B32A70F2F4023FB00A797F6 /* Shoebox */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3B32A7222F4023FB00A797F6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 3B32A7232F4023FB00A797F6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Shoebox; sourceTree = "<group>"; };
-		3B32A72B2F40240700A797F6 /* ShoeboxWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3B32A7322F40240700A797F6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ShoeboxWidget; sourceTree = "<group>"; };
-		3B32A7342F40240B00A797F6 /* Shared */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Shared; sourceTree = "<group>"; };
+		3B32A70F2F4023FB00A797F6 /* Shoebox */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3B32A7222F4023FB00A797F6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 3BAE77532F6AFA3D000EC1E6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Shoebox; sourceTree = "<group>"; };
+		3B32A7342F40240B00A797F6 /* Shared */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3BAE77512F6AF89A000EC1E6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Shared; sourceTree = "<group>"; };
+		3BAE773C2F6AF6E2000EC1E6 /* Slideshow */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (3BAE774D2F6AF6E7000EC1E6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Slideshow; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,19 +108,19 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3BAE77362F6AF6E2000EC1E6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3BAE773B2F6AF6E2000EC1E6 /* SwiftUI.framework in Frameworks */,
+				3BAE773A2F6AF6E2000EC1E6 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A100030100000000000003 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		A100030200000000000003 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A100010200000000000006 /* SwiftUI.framework in Frameworks */,
-				A100010200000000000005 /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -115,9 +132,9 @@
 			children = (
 				3BB8CAF82F3FB0F900F952D9 /* README.md */,
 				3B32A70F2F4023FB00A797F6 /* Shoebox */,
-				3B32A72B2F40240700A797F6 /* ShoeboxWidget */,
 				3B32A7342F40240B00A797F6 /* Shared */,
 				3B22F2E02F53327E00DBE8B5 /* ShoeboxTests */,
+				3BAE773C2F6AF6E2000EC1E6 /* Slideshow */,
 				A100070000000000000002 /* Products */,
 				A100070000000000000003 /* Frameworks */,
 			);
@@ -127,8 +144,8 @@
 			isa = PBXGroup;
 			children = (
 				A100020400000000000001 /* Shoebox.app */,
-				A100020400000000000002 /* ShoeboxWidgetExtension.appex */,
 				3B22F2DF2F53327E00DBE8B5 /* ShoeboxTests.xctest */,
+				3BAE77392F6AF6E2000EC1E6 /* SlideshowExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -168,6 +185,28 @@
 			productReference = 3B22F2DF2F53327E00DBE8B5 /* ShoeboxTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		3BAE77382F6AF6E2000EC1E6 /* SlideshowExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3BAE774C2F6AF6E7000EC1E6 /* Build configuration list for PBXNativeTarget "SlideshowExtension" */;
+			buildPhases = (
+				3BAE77352F6AF6E2000EC1E6 /* Sources */,
+				3BAE77362F6AF6E2000EC1E6 /* Frameworks */,
+				3BAE77372F6AF6E2000EC1E6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				3BAE773C2F6AF6E2000EC1E6 /* Slideshow */,
+			);
+			name = SlideshowExtension;
+			packageProductDependencies = (
+			);
+			productName = SlideshowExtension;
+			productReference = 3BAE77392F6AF6E2000EC1E6 /* SlideshowExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		A100040100000000000001 /* Shoebox */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A100080100000000000001 /* Build configuration list for PBXNativeTarget "Shoebox" */;
@@ -176,11 +215,12 @@
 				A100030100000000000002 /* Resources */,
 				A100030100000000000003 /* Frameworks */,
 				A100030100000000000004 /* Embed ExtensionKit Extensions */,
+				3BAE77492F6AF6E7000EC1E6 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				A100050200000000000001 /* PBXTargetDependency */,
+				3BAE77472F6AF6E7000EC1E6 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				3B32A70F2F4023FB00A797F6 /* Shoebox */,
@@ -190,27 +230,6 @@
 			productName = Shoebox;
 			productReference = A100020400000000000001 /* Shoebox.app */;
 			productType = "com.apple.product-type.application";
-		};
-		A100040200000000000001 /* ShoeboxWidgetExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = A100080200000000000001 /* Build configuration list for PBXNativeTarget "ShoeboxWidgetExtension" */;
-			buildPhases = (
-				A100030200000000000001 /* Sources */,
-				A100030200000000000002 /* Resources */,
-				A100030200000000000003 /* Frameworks */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				3B32A72B2F40240700A797F6 /* ShoeboxWidget */,
-				3B32A7342F40240B00A797F6 /* Shared */,
-			);
-			name = ShoeboxWidgetExtension;
-			productName = ShoeboxWidgetExtension;
-			productReference = A100020400000000000002 /* ShoeboxWidgetExtension.appex */;
-			productType = "com.apple.product-type.extensionkit-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -226,10 +245,10 @@
 						CreatedOnToolsVersion = 26.3;
 						TestTargetID = A100040100000000000001;
 					};
-					A100040100000000000001 = {
-						CreatedOnToolsVersion = 15.4;
+					3BAE77382F6AF6E2000EC1E6 = {
+						CreatedOnToolsVersion = 26.3;
 					};
-					A100040200000000000001 = {
+					A100040100000000000001 = {
 						CreatedOnToolsVersion = 15.4;
 					};
 				};
@@ -248,8 +267,8 @@
 			projectRoot = "";
 			targets = (
 				A100040100000000000001 /* Shoebox */,
-				A100040200000000000001 /* ShoeboxWidgetExtension */,
 				3B22F2DE2F53327E00DBE8B5 /* ShoeboxTests */,
+				3BAE77382F6AF6E2000EC1E6 /* SlideshowExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -262,14 +281,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A100030100000000000002 /* Resources */ = {
+		3BAE77372F6AF6E2000EC1E6 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A100030200000000000002 /* Resources */ = {
+		A100030100000000000002 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -286,14 +305,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A100030100000000000001 /* Sources */ = {
+		3BAE77352F6AF6E2000EC1E6 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A100030200000000000001 /* Sources */ = {
+		A100030100000000000001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -308,10 +327,10 @@
 			target = A100040100000000000001 /* Shoebox */;
 			targetProxy = 3B22F2E32F53327E00DBE8B5 /* PBXContainerItemProxy */;
 		};
-		A100050200000000000001 /* PBXTargetDependency */ = {
+		3BAE77472F6AF6E7000EC1E6 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = A100040200000000000001 /* ShoeboxWidgetExtension */;
-			targetProxy = A100050100000000000001 /* PBXContainerItemProxy */;
+			target = 3BAE77382F6AF6E2000EC1E6 /* SlideshowExtension */;
+			targetProxy = 3BAE77462F6AF6E7000EC1E6 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -355,6 +374,76 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Shoebox.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Shoebox";
+			};
+			name = Release;
+		};
+		3BAE774A2F6AF6E7000EC1E6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = Slideshow/Slideshow.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 46UKXDYHHC;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Slideshow/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Slideshow;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.subpop.Shoebox.Slideshow;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		3BAE774B2F6AF6E7000EC1E6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = Slideshow/Slideshow.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 46UKXDYHHC;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Slideshow/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Slideshow;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.subpop.Shoebox.Slideshow;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -566,70 +655,6 @@
 			};
 			name = Release;
 		};
-		A100090200000000000001 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = ShoeboxWidget/ShoeboxWidget.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_USER_SELECTED_FILES = readwrite;
-				EXTENSIONKIT_EXTENSION = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ShoeboxWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ShoeboxWidget;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@executable_path/../../../../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = app.subpop.Shoebox.Widget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-			};
-			name = Debug;
-		};
-		A100090200000000000002 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = ShoeboxWidget/ShoeboxWidget.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_USER_SELECTED_FILES = readwrite;
-				EXTENSIONKIT_EXTENSION = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ShoeboxWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ShoeboxWidget;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@executable_path/../../../../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = app.subpop.Shoebox.Widget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -638,6 +663,15 @@
 			buildConfigurations = (
 				3B22F2E52F53327E00DBE8B5 /* Debug */,
 				3B22F2E62F53327E00DBE8B5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3BAE774C2F6AF6E7000EC1E6 /* Build configuration list for PBXNativeTarget "SlideshowExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3BAE774A2F6AF6E7000EC1E6 /* Debug */,
+				3BAE774B2F6AF6E7000EC1E6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -656,15 +690,6 @@
 			buildConfigurations = (
 				A100090100000000000001 /* Debug */,
 				A100090100000000000002 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		A100080200000000000001 /* Build configuration list for PBXNativeTarget "ShoeboxWidgetExtension" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A100090200000000000001 /* Debug */,
-				A100090200000000000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

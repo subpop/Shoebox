@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import Foundation
 import WidgetKit
 import SwiftUI
-import AppIntents
-import AppKit
 
 // MARK: - Timeline Entry
 
@@ -133,7 +132,7 @@ struct SlideshowProvider: AppIntentTimelineProvider {
 
 // MARK: - Widget View
 
-struct ShoeboxWidgetEntryView: View {
+struct SlideshowEntryView : View {
     var entry: SlideshowProvider.Entry
 
     var body: some View {
@@ -209,12 +208,12 @@ struct ShoeboxWidgetEntryView: View {
 
 // MARK: - Widget Definition
 
-struct ShoeboxSlideshowWidget: Widget {
-    let kind: String = "ShoeboxSlideshowWidget"
+struct Slideshow: Widget {
+    let kind: String = "Slideshow"
 
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: SelectCollectionIntent.self, provider: SlideshowProvider()) { entry in
-            ShoeboxWidgetEntryView(entry: entry)
+            SlideshowEntryView(entry: entry)
                 .containerBackground(for: .widget) {}
         }
         .configurationDisplayName("Slideshow")
@@ -226,3 +225,24 @@ struct ShoeboxSlideshowWidget: Widget {
         .containerBackgroundRemovable(false)
     }
 }
+// MARK: - Preview
+
+#Preview("Slideshow (empty)", as: .systemMedium) {
+    Slideshow()
+} timeline: {
+    SlideshowEntry.empty()
+}
+
+#Preview("Slideshow (photo)", as: .systemMedium) {
+    Slideshow()
+} timeline: {
+    SlideshowEntry(
+        date: .now,
+        imagePath: nil,
+        collectionName: "Vacation",
+        photoIndex: 3,
+        totalPhotos: 42,
+        focusPoint: nil
+    )
+}
+

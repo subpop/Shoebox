@@ -16,8 +16,8 @@ import WidgetKit
 import SwiftUI
 
 @main
-struct ShoeboxWidgetBundle: WidgetBundle {
+struct SlideshowBundle: WidgetBundle {
     var body: some Widget {
-        ShoeboxSlideshowWidget()
+        Slideshow()
     }
 }

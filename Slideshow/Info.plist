@@ -4,9 +4,9 @@
 <dict>
 	<key>AppGroupIdentifier</key>
 	<string>group.app.subpop.Shoebox</string>
-	<key>EXAppExtensionAttributes</key>
+	<key>NSExtension</key>
 	<dict>
-		<key>EXExtensionPointIdentifier</key>
+		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.widgetkit-extension</string>
 	</dict>
 </dict>
