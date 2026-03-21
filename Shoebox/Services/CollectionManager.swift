@@ -38,10 +38,15 @@ class CollectionManager: ObservableObject {
     @Published var selectedCollectionID: UUID? {
         didSet { saveSelectedCollectionID() }
     }
+    @Published var sortOrder: CollectionSortOrder = .default {
+        didSet { saveSortOrder() }
+    }
     @Published private(set) var isUnlocked = false
     @Published private(set) var lockMethod: LockMethod = .loginPassword
     private let defaults: UserDefaults
     private var accessedURLs: [URL] = []
+
+    private static let sortOrderKey = "collectionSortOrder"
 
     var selectedCollection: PhotoCollection? {
         collections.first { $0.id == selectedCollectionID }
@@ -49,6 +54,25 @@ class CollectionManager: ObservableObject {
 
     var isFavoritesSelected: Bool {
         selectedCollectionID == Self.favoritesCollectionID
+    }
+
+    var sortedCollections: [PhotoCollection] {
+        guard sortOrder.criterion != .manual else { return collections }
+
+        return collections.sorted { a, b in
+            let result: Bool
+            switch sortOrder.criterion {
+            case .manual:
+                return false
+            case .name:
+                result = a.name.localizedStandardCompare(b.name) == .orderedAscending
+            case .dateAdded:
+                result = a.dateAdded < b.dateAdded
+            case .photoCount:
+                result = a.photoCount < b.photoCount
+            }
+            return sortOrder.ascending ? result : !result
+        }
     }
 
     // MARK: - Lock
@@ -144,6 +168,7 @@ class CollectionManager: ObservableObject {
             lockMethod = .customPassword
         }
         loadCollections()
+        loadSortOrder()
     }
 
     deinit {
@@ -303,6 +328,19 @@ class CollectionManager: ObservableObject {
 
     private func saveSelectedCollectionID() {
         defaults.set(selectedCollectionID?.uuidString, forKey: ShoeboxKit.selectedCollectionIDKey)
+    }
+
+    private func saveSortOrder() {
+        if let data = try? JSONEncoder().encode(sortOrder) {
+            defaults.set(data, forKey: Self.sortOrderKey)
+        }
+    }
+
+    private func loadSortOrder() {
+        guard let data = defaults.data(forKey: Self.sortOrderKey),
+              let decoded = try? JSONDecoder().decode(CollectionSortOrder.self, from: data)
+        else { return }
+        sortOrder = decoded
     }
 
     // MARK: - Widget Export

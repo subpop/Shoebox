@@ -29,7 +29,7 @@ struct SidebarView: View {
             }
 
             Section {
-                ForEach(collectionManager.collections) { collection in
+                ForEach(collectionManager.sortedCollections) { collection in
                     SidebarRow(
                         icon: "folder.fill",
                         iconColor: .accentColor,
@@ -78,11 +78,11 @@ struct SidebarView: View {
                             }
                         }
                 }
-                .onMove { source, destination in
+                .onMove(perform: collectionManager.sortOrder.criterion == .manual ? { source, destination in
                     withAnimation {
                         collectionManager.moveCollection(fromOffsets: source, toOffset: destination)
                     }
-                }
+                } : nil)
             } header: {
                 Text("Collections")
                     .font(.subheadline)
@@ -91,6 +91,60 @@ struct SidebarView: View {
         }
         .listStyle(.sidebar)
         .frame(minWidth: 220)
+        .toolbar {
+            ToolbarItem(placement: .automatic) {
+                Menu {
+                    Section("Sort By") {
+                        ForEach(CollectionSortCriterion.allCases, id: \.self) { criterion in
+                            Toggle(isOn: Binding(
+                                get: { collectionManager.sortOrder.criterion == criterion },
+                                set: { isOn in
+                                    if isOn {
+                                        withAnimation {
+                                            collectionManager.sortOrder = CollectionSortOrder(
+                                                criterion: criterion,
+                                                ascending: true
+                                            )
+                                        }
+                                    }
+                                }
+                            )) {
+                                Label(criterion.label, systemImage: criterion.icon)
+                            }
+                        }
+                    }
+
+                    if collectionManager.sortOrder.criterion != .manual {
+                        Section("Order") {
+                            Toggle(isOn: Binding(
+                                get: { collectionManager.sortOrder.ascending },
+                                set: { _ in
+                                    withAnimation {
+                                        collectionManager.sortOrder.ascending = true
+                                    }
+                                }
+                            )) {
+                                Label("Ascending", systemImage: "arrow.up")
+                            }
+
+                            Toggle(isOn: Binding(
+                                get: { !collectionManager.sortOrder.ascending },
+                                set: { _ in
+                                    withAnimation {
+                                        collectionManager.sortOrder.ascending = false
+                                    }
+                                }
+                            )) {
+                                Label("Descending", systemImage: "arrow.down")
+                            }
+                        }
+                    }
+                } label: {
+                    Label("Filter", systemImage: "line.3.horizontal.decrease")
+                }
+                .menuIndicator(.hidden)
+            }
+        }
         .safeAreaBar(edge: .bottom) {
             HStack {
                 Button(action: openFolder) {
