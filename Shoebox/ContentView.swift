@@ -229,22 +229,41 @@ struct ContentView: View {
     @ViewBuilder
     private var lockToggleButton: some View {
         if collectionManager.isLocked {
-            Button {
-                triggerUnlock()
-            } label: {
-                Label("Unlock", systemImage: "lock.fill")
-            }
-            .help("Unlock All Collections")
-        } else {
-            Button {
-                if !collectionManager.isSelectedCollectionPasswordProtected {
-                    collectionManager.addLockToSelectedCollection()
+            if collectionManager.isSelectedCollectionPasswordProtected {
+                // Locked + Protected → Unlock all collections
+                Button {
+                    triggerUnlock()
+                } label: {
+                    Label("Unlock", systemImage: "lock.fill")
                 }
-                collectionManager.lock()
-            } label: {
-                Label("Lock", systemImage: "lock.open")
+                .help("Unlock All Collections")
+            } else {
+                // Locked + Unprotected → Add protection to this collection
+                Button {
+                    collectionManager.addLockToSelectedCollection()
+                } label: {
+                    Label("Lock", systemImage: "lock.open")
+                }
+                .help("Lock This Collection")
             }
-            .help("Lock All Collections")
+        } else {
+            if collectionManager.isSelectedCollectionPasswordProtected {
+                // Unlocked + Protected → Lock all collections
+                Button {
+                    collectionManager.lock()
+                } label: {
+                    Label("Lock", systemImage: "lock.open")
+                }
+                .help("Lock All Collections")
+            } else {
+                // Unlocked + Unprotected → Just add protection, don't lock
+                Button {
+                    collectionManager.addLockToSelectedCollection()
+                } label: {
+                    Label("Lock", systemImage: "lock.open")
+                }
+                .help("Lock This Collection")
+            }
         }
     }
 
