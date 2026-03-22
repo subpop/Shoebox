@@ -16,6 +16,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var collectionManager: CollectionManager
+    @AppStorage("collageGridSize") private var collageGridSize = 2
     @State private var showSetPasswordSheet = false
 
     private var lockMethodBinding: Binding<LockMethod> {
@@ -27,6 +28,14 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            Section("Sidebar Grid") {
+                Picker("Collage Style", selection: $collageGridSize) {
+                    Text("2 \u{00d7} 2").tag(2)
+                    Text("3 \u{00d7} 3").tag(3)
+                }
+                .pickerStyle(.radioGroup)
+            }
+
             Section("Lock Method") {
                 Picker(selection: lockMethodBinding) {
                     Text("Use Login Password").tag(LockMethod.loginPassword)
@@ -43,11 +52,10 @@ struct SettingsView: View {
                     }
                     .padding(.leading, 20)
                 }
-
             }
         }
         .formStyle(.grouped)
-        .frame(maxWidth: 400, maxHeight: 250)
+        .frame(maxWidth: 400, maxHeight: 280)
         .sheet(isPresented: $showSetPasswordSheet) {
             SetPasswordSheet { password in
                 collectionManager.setCustomPassword(password)

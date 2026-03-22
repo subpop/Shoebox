@@ -21,6 +21,7 @@ struct SidebarView: View {
     @State private var settingsCollectionID: UUID?
     @State private var selection: UUID?
     @AppStorage("sidebarDisplayMode") private var displayMode: SidebarDisplayMode = .list
+    @AppStorage("collageGridSize") private var collageGridSize = 2
 
     private let thumbnailProvider = CollectionThumbnailProvider.shared
 
@@ -209,6 +210,7 @@ struct SidebarView: View {
                         forFavoriteIDs: favoritesManager.favoriteIDs,
                         using: collectionManager
                     ),
+                    collageGridSize: collageGridSize,
                     isSelected: selection == CollectionManager.favoritesCollectionID
                 )
                 .onTapGesture {
@@ -224,6 +226,7 @@ struct SidebarView: View {
                             for: collection,
                             using: collectionManager
                         ),
+                        collageGridSize: collageGridSize,
                         isPasswordProtected: collection.isPasswordProtected,
                         isLocked: collectionManager.isLocked,
                         isSelected: selection == collection.id

@@ -20,6 +20,7 @@ struct SidebarTileView: View {
     let title: String
     let count: Int
     let imageURLs: [URL]
+    var collageGridSize: Int = 2
     var isPasswordProtected: Bool = false
     var isLocked: Bool = false
     var isSelected: Bool = false
@@ -27,7 +28,7 @@ struct SidebarTileView: View {
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             // Collage background
-            CollageView(imageURLs: imageURLs, gridSize: 2)
+            CollageView(imageURLs: imageURLs, gridSize: collageGridSize)
 
             // Blur overlay when locked
             if isPasswordProtected && isLocked {
