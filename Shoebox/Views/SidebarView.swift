@@ -20,8 +20,125 @@ struct SidebarView: View {
     @EnvironmentObject var favoritesManager: FavoritesManager
     @State private var settingsCollectionID: UUID?
     @State private var selection: UUID?
+    @AppStorage("sidebarDisplayMode") private var displayMode: SidebarDisplayMode = .list
+
+    private let thumbnailProvider = CollectionThumbnailProvider.shared
 
     var body: some View {
+        Group {
+            switch displayMode {
+            case .list:
+                listContent
+            case .grid:
+                gridContent
+            }
+        }
+        .frame(minWidth: 220)
+        .toolbar {
+            ToolbarItemGroup(placement: .automatic) {
+                displayModeToggle
+                sortMenu
+            }
+        }
+        .safeAreaBar(edge: .bottom) {
+            HStack {
+                Button(action: openFolder) {
+                    Label("Add Folder", systemImage: "folder.badge.plus")
+                }
+                .buttonStyle(.borderless)
+                .padding(12)
+
+                Spacer()
+            }
+        }
+        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+            handleDrop(providers: providers)
+        }
+        .onAppear {
+            selection = collectionManager.selectedCollectionID
+        }
+        .onChange(of: selection) { _, newValue in
+            collectionManager.selectedCollectionID = newValue
+        }
+        .onChange(of: collectionManager.selectedCollectionID) { _, newValue in
+            selection = newValue
+        }
+    }
+
+    // MARK: - Display Mode Toggle
+
+    private var displayModeToggle: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                displayMode = displayMode == .list ? .grid : .list
+            }
+        } label: {
+            Label(
+                displayMode == .list ? "Grid View" : "List View",
+                systemImage: displayMode == .list ? "square.grid.2x2" : "list.bullet"
+            )
+        }
+        .help(displayMode == .list ? "Switch to Grid View" : "Switch to List View")
+    }
+
+    // MARK: - Sort Menu
+
+    private var sortMenu: some View {
+        Menu {
+            Section("Sort By") {
+                ForEach(CollectionSortCriterion.allCases, id: \.self) { criterion in
+                    Toggle(isOn: Binding(
+                        get: { collectionManager.sortOrder.criterion == criterion },
+                        set: { isOn in
+                            if isOn {
+                                withAnimation {
+                                    collectionManager.sortOrder = CollectionSortOrder(
+                                        criterion: criterion,
+                                        ascending: true
+                                    )
+                                }
+                            }
+                        }
+                    )) {
+                        Label(criterion.label, systemImage: criterion.icon)
+                    }
+                }
+            }
+
+            if collectionManager.sortOrder.criterion != .manual {
+                Section("Order") {
+                    Toggle(isOn: Binding(
+                        get: { collectionManager.sortOrder.ascending },
+                        set: { _ in
+                            withAnimation {
+                                collectionManager.sortOrder.ascending = true
+                            }
+                        }
+                    )) {
+                        Label("Ascending", systemImage: "arrow.up")
+                    }
+
+                    Toggle(isOn: Binding(
+                        get: { !collectionManager.sortOrder.ascending },
+                        set: { _ in
+                            withAnimation {
+                                collectionManager.sortOrder.ascending = false
+                            }
+                        }
+                    )) {
+                        Label("Descending", systemImage: "arrow.down")
+                    }
+                }
+            }
+        } label: {
+            Label("Filter", systemImage: "line.3.horizontal.decrease")
+        }
+        .menuIndicator(.hidden)
+    }
+
+    // MARK: - List Content
+
+    private var listContent: some View {
         List(selection: $selection) {
             Section {
                 SidebarRow(icon: "heart.fill", iconColor: .pink, title: "Favorites", count: favoritesManager.count)
@@ -49,25 +166,7 @@ struct SidebarView: View {
                             CollectionSettingsView(collection: collection)
                         }
                         .contextMenu {
-                            Button {
-                                settingsCollectionID = collection.id
-                            } label: {
-                                Label("Settings", systemImage: "gearshape")
-                            }
-                            Button {
-                                NSWorkspace.shared.selectFile(
-                                    nil,
-                                    inFileViewerRootedAtPath: collection.path
-                                )
-                            } label: {
-                                Label("Show in Finder", systemImage: "folder")
-                            }
-                            Divider()
-                            Button(role: .destructive) {
-                                removeCollection(collection)
-                            } label: {
-                                Label("Remove from Library", systemImage: "trash")
-                            }
+                            collectionContextMenu(for: collection)
                         }
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
@@ -90,85 +189,84 @@ struct SidebarView: View {
             }
         }
         .listStyle(.sidebar)
-        .frame(minWidth: 220)
-        .toolbar {
-            ToolbarItem(placement: .automatic) {
-                Menu {
-                    Section("Sort By") {
-                        ForEach(CollectionSortCriterion.allCases, id: \.self) { criterion in
-                            Toggle(isOn: Binding(
-                                get: { collectionManager.sortOrder.criterion == criterion },
-                                set: { isOn in
-                                    if isOn {
-                                        withAnimation {
-                                            collectionManager.sortOrder = CollectionSortOrder(
-                                                criterion: criterion,
-                                                ascending: true
-                                            )
-                                        }
-                                    }
-                                }
-                            )) {
-                                Label(criterion.label, systemImage: criterion.icon)
-                            }
-                        }
-                    }
+    }
 
-                    if collectionManager.sortOrder.criterion != .manual {
-                        Section("Order") {
-                            Toggle(isOn: Binding(
-                                get: { collectionManager.sortOrder.ascending },
-                                set: { _ in
-                                    withAnimation {
-                                        collectionManager.sortOrder.ascending = true
-                                    }
-                                }
-                            )) {
-                                Label("Ascending", systemImage: "arrow.up")
-                            }
+    // MARK: - Grid Content
 
-                            Toggle(isOn: Binding(
-                                get: { !collectionManager.sortOrder.ascending },
-                                set: { _ in
-                                    withAnimation {
-                                        collectionManager.sortOrder.ascending = false
-                                    }
-                                }
-                            )) {
-                                Label("Descending", systemImage: "arrow.down")
-                            }
-                        }
-                    }
-                } label: {
-                    Label("Filter", systemImage: "line.3.horizontal.decrease")
+    private static let tileColumns = [
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8),
+    ]
+
+    private var gridContent: some View {
+        ScrollView {
+            LazyVGrid(columns: Self.tileColumns, spacing: 8) {
+                // Favorites tile
+                SidebarTileView(
+                    title: "Favorites",
+                    count: favoritesManager.count,
+                    imageURLs: thumbnailProvider.sampleURLs(
+                        forFavoriteIDs: favoritesManager.favoriteIDs,
+                        using: collectionManager
+                    ),
+                    isSelected: selection == CollectionManager.favoritesCollectionID
+                )
+                .onTapGesture {
+                    selection = CollectionManager.favoritesCollectionID
                 }
-                .menuIndicator(.hidden)
-            }
-        }
-        .safeAreaBar(edge: .bottom) {
-            HStack {
-                Button(action: openFolder) {
-                    Label("Add Folder", systemImage: "folder.badge.plus")
-                }
-                .buttonStyle(.borderless)
-                .padding(12)
 
-                Spacer()
+                // Collection tiles
+                ForEach(collectionManager.sortedCollections) { collection in
+                    SidebarTileView(
+                        title: collection.name,
+                        count: collection.photoCount,
+                        imageURLs: thumbnailProvider.sampleURLs(
+                            for: collection,
+                            using: collectionManager
+                        ),
+                        isPasswordProtected: collection.isPasswordProtected,
+                        isLocked: collectionManager.isLocked,
+                        isSelected: selection == collection.id
+                    )
+                    .onTapGesture {
+                        selection = collection.id
+                    }
+                    .contextMenu {
+                        collectionContextMenu(for: collection)
+                    }
+                }
             }
+            .padding(8)
         }
-        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
-            handleDrop(providers: providers)
+        .background(Color(nsColor: .controlBackgroundColor))
+    }
+
+    // MARK: - Shared Context Menu
+
+    @ViewBuilder
+    private func collectionContextMenu(for collection: PhotoCollection) -> some View {
+        Button {
+            settingsCollectionID = collection.id
+        } label: {
+            Label("Settings", systemImage: "gearshape")
         }
-        .onAppear {
-            selection = collectionManager.selectedCollectionID
+        Button {
+            NSWorkspace.shared.selectFile(
+                nil,
+                inFileViewerRootedAtPath: collection.path
+            )
+        } label: {
+            Label("Show in Finder", systemImage: "folder")
         }
-        .onChange(of: selection) { _, newValue in
-            collectionManager.selectedCollectionID = newValue
-        }
-        .onChange(of: collectionManager.selectedCollectionID) { _, newValue in
-            selection = newValue
+        Divider()
+        Button(role: .destructive) {
+            removeCollection(collection)
+        } label: {
+            Label("Remove from Library", systemImage: "trash")
         }
     }
+
+    // MARK: - Actions
 
     private func removeCollection(_ collection: PhotoCollection) {
         withAnimation {
@@ -202,6 +300,8 @@ struct SidebarView: View {
         return true
     }
 }
+
+// MARK: - Sidebar Row
 
 struct SidebarRow: View {
     let icon: String
