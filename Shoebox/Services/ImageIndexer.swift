@@ -129,6 +129,17 @@ actor ImageIndexer {
         onProgress?(IndexProgress(completed: 0, total: 0))
     }
 
+    /// Removes all cached index data from memory and disk.
+    func clearCache() {
+        cancelIndexing()
+        entries.removeAll()
+        let fm = FileManager.default
+        if fm.fileExists(atPath: diskCacheURL.path) {
+            try? fm.removeItem(at: diskCacheURL)
+            try? fm.createDirectory(at: diskCacheURL, withIntermediateDirectories: true)
+        }
+    }
+
     // MARK: - Internal Helpers
 
     private func storeEntry(_ entry: IndexEntry, forID id: String) {

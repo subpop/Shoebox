@@ -15,6 +15,25 @@
 import SwiftUI
 
 struct SettingsView: View {
+    var body: some View {
+        TabView {
+            GeneralSettingsTab()
+                .tabItem {
+                    Label("General", systemImage: "gearshape")
+                }
+
+            AdvancedSettingsTab()
+                .tabItem {
+                    Label("Advanced", systemImage: "gearshape.2")
+                }
+        }
+        .frame(width: 400, height: 280)
+    }
+}
+
+// MARK: - General Tab
+
+private struct GeneralSettingsTab: View {
     @EnvironmentObject var collectionManager: CollectionManager
     @AppStorage("collageGridSize") private var collageGridSize = 2
     @State private var showSetPasswordSheet = false
@@ -35,7 +54,7 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.radioGroup)
             }
-
+            
             Section("Lock Method") {
                 Picker(selection: lockMethodBinding) {
                     Text("Use Login Password").tag(LockMethod.loginPassword)
@@ -55,10 +74,48 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(maxWidth: 400, maxHeight: 280)
         .sheet(isPresented: $showSetPasswordSheet) {
             SetPasswordSheet { password in
                 collectionManager.setCustomPassword(password)
+            }
+        }
+    }
+}
+
+// MARK: - Advanced Tab
+
+private struct AdvancedSettingsTab: View {
+    @State private var showClearCacheConfirmation = false
+
+    var body: some View {
+        Form {
+            Section("Cache") {
+                Button("Clear Cache\u{2026}") {
+                    showClearCacheConfirmation = true
+                }
+                .confirmationDialog(
+                    "Clear all cached thumbnails and image index data?",
+                    isPresented: $showClearCacheConfirmation,
+                    titleVisibility: .visible
+                ) {
+                    Button("Clear Cache", role: .destructive) {
+                        clearAllCaches()
+                    }
+                } message: {
+                    Text("Thumbnails and search index data will be regenerated as needed. This cannot be undone.")
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private func clearAllCaches() {
+        Task {
+            await ThumbnailCache.shared.clearCache()
+            await ImageIndexer.shared.clearCache()
+            await MainActor.run {
+                CollectionThumbnailProvider.shared.invalidateAll()
+                NotificationCenter.default.post(name: .cachesCleared, object: nil)
             }
         }
     }

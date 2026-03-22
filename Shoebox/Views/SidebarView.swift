@@ -20,6 +20,7 @@ struct SidebarView: View {
     @EnvironmentObject var favoritesManager: FavoritesManager
     @State private var settingsCollectionID: UUID?
     @State private var selection: UUID?
+    @State private var cacheGeneration = 0
     @AppStorage("sidebarDisplayMode") private var displayMode: SidebarDisplayMode = .list
     @AppStorage("collageGridSize") private var collageGridSize = 2
 
@@ -63,6 +64,9 @@ struct SidebarView: View {
         }
         .onChange(of: collectionManager.selectedCollectionID) { _, newValue in
             selection = newValue
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .cachesCleared)) { _ in
+            cacheGeneration += 1
         }
     }
 
@@ -211,6 +215,7 @@ struct SidebarView: View {
                         using: collectionManager
                     ),
                     collageGridSize: collageGridSize,
+                    refreshID: cacheGeneration,
                     isSelected: selection == CollectionManager.favoritesCollectionID
                 )
                 .onTapGesture {
@@ -227,6 +232,7 @@ struct SidebarView: View {
                             using: collectionManager
                         ),
                         collageGridSize: collageGridSize,
+                        refreshID: cacheGeneration,
                         isPasswordProtected: collection.isPasswordProtected,
                         isLocked: collectionManager.isLocked,
                         isSelected: selection == collection.id
@@ -240,6 +246,7 @@ struct SidebarView: View {
                 }
             }
             .padding(8)
+            .id("\(collageGridSize)-\(cacheGeneration)")
         }
         .background(Color(nsColor: .controlBackgroundColor))
     }

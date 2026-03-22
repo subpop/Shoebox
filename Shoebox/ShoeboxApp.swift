@@ -68,6 +68,7 @@ struct ShoeboxApp: App {
 
 extension Notification.Name {
     static let openFolder = Notification.Name("ShoeboxOpenFolder")
+    static let cachesCleared = Notification.Name("ShoeboxCachesCleared")
 }
 
 /// Presents an NSOpenPanel configured for folder selection and returns the chosen URL.

@@ -20,6 +20,8 @@ struct CollageView: View {
     let imageURLs: [URL]
     var gridSize: Int = 2
     var thumbnailSize: CGSize = CGSize(width: 150, height: 150)
+    /// Changing this value forces all cells to reload their thumbnails.
+    var refreshID: Int = 0
 
     /// How many cells the grid contains.
     private var cellCount: Int { gridSize * gridSize }
@@ -30,26 +32,24 @@ struct CollageView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            let cellWidth = geometry.size.width / CGFloat(gridSize)
-            let cellHeight = geometry.size.height / CGFloat(gridSize)
+        if displayURLs.isEmpty {
+            Rectangle().fill(.quaternary.opacity(0.5))
+        } else {
+            GeometryReader { geometry in
+                let cellWidth = geometry.size.width / CGFloat(gridSize)
+                let cellHeight = geometry.size.height / CGFloat(gridSize)
 
-            if displayURLs.isEmpty {
-                // Fallback: plain fill when no images are available
-                Rectangle().fill(.quaternary.opacity(0.5))
-            } else {
-                // Build the grid manually so cells are seamless (zero spacing)
-                let columns = Array(
-                    repeating: GridItem(.fixed(cellWidth), spacing: 0),
-                    count: gridSize
-                )
-
-                LazyVGrid(columns: columns, spacing: 0) {
-                    ForEach(0..<cellCount, id: \.self) { index in
-                        let url = displayURLs[index % displayURLs.count]
-                        CollageCellView(url: url, thumbnailSize: thumbnailSize)
-                            .frame(width: cellWidth, height: cellHeight)
-                            .clipped()
+                VStack(spacing: 0) {
+                    ForEach(0..<gridSize, id: \.self) { row in
+                        HStack(spacing: 0) {
+                            ForEach(0..<gridSize, id: \.self) { col in
+                                let index = row * gridSize + col
+                                let url = displayURLs[index % displayURLs.count]
+                                CollageCellView(url: url, thumbnailSize: thumbnailSize, refreshID: refreshID)
+                                    .frame(width: cellWidth, height: cellHeight)
+                                    .clipped()
+                            }
+                        }
                     }
                 }
             }
@@ -62,7 +62,13 @@ struct CollageView: View {
 private struct CollageCellView: View {
     let url: URL
     let thumbnailSize: CGSize
+    var refreshID: Int = 0
     @State private var image: NSImage?
+
+    /// Combined identity so the task re-fires on URL change or cache clear.
+    private var taskID: String {
+        "\(url.absoluteString)-\(refreshID)"
+    }
 
     var body: some View {
         ZStack {
@@ -74,7 +80,8 @@ private struct CollageCellView: View {
                     .aspectRatio(contentMode: .fill)
             }
         }
-        .task(id: url) {
+        .task(id: taskID) {
+            image = nil
             image = await ThumbnailCache.shared.thumbnail(
                 for: url,
                 size: thumbnailSize
