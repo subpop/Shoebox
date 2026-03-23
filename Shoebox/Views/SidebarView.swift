@@ -210,7 +210,7 @@ struct SidebarView: View {
                 SidebarTileView(
                     title: "Favorites",
                     count: favoritesManager.count,
-                    imageURLs: thumbnailProvider.sampleURLs(
+                    samples: thumbnailProvider.samples(
                         forFavoriteIDs: favoritesManager.favoriteIDs,
                         using: collectionManager
                     ),
@@ -227,7 +227,7 @@ struct SidebarView: View {
                     SidebarTileView(
                         title: collection.name,
                         count: collection.photoCount,
-                        imageURLs: thumbnailProvider.sampleURLs(
+                        samples: thumbnailProvider.samples(
                             for: collection,
                             using: collectionManager
                         ),

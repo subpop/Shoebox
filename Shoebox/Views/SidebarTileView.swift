@@ -19,7 +19,7 @@ import SwiftUI
 struct SidebarTileView: View {
     let title: String
     let count: Int
-    let imageURLs: [URL]
+    let samples: [SamplePhoto]
     var collageGridSize: Int = 2
     var refreshID: Int = 0
     var isPasswordProtected: Bool = false
@@ -29,7 +29,7 @@ struct SidebarTileView: View {
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             // Collage background
-            CollageView(imageURLs: imageURLs, gridSize: collageGridSize, refreshID: refreshID)
+            CollageView(samples: samples, gridSize: collageGridSize, refreshID: refreshID)
 
             // Blur overlay when locked
             if isPasswordProtected && isLocked {
@@ -43,7 +43,7 @@ struct SidebarTileView: View {
             }
 
             // Bottom gradient scrim for text readability
-            if !imageURLs.isEmpty && !(isPasswordProtected && isLocked) {
+            if !samples.isEmpty && !(isPasswordProtected && isLocked) {
                 LinearGradient(
                     colors: [.clear, .black.opacity(0.7)],
                     startPoint: .center,
@@ -61,8 +61,8 @@ struct SidebarTileView: View {
                 Text(ShoeboxKit.photoCountLabel(count))
                     .font(.caption2)
             }
-            .foregroundColor(imageURLs.isEmpty ? Color.primary : Color.white)
-            .shadow(color: imageURLs.isEmpty ? .clear : .black.opacity(0.5), radius: 2, x: 0, y: 1)
+            .foregroundColor(samples.isEmpty ? Color.primary : Color.white)
+            .shadow(color: samples.isEmpty ? .clear : .black.opacity(0.5), radius: 2, x: 0, y: 1)
             .padding(8)
 
             // Lock icon (top-right)
@@ -72,7 +72,7 @@ struct SidebarTileView: View {
                         Spacer()
                         Image(systemName: "lock.open.fill")
                             .font(.caption2)
-                            .foregroundColor(imageURLs.isEmpty ? Color.secondary : Color.white.opacity(0.8))
+                            .foregroundColor(samples.isEmpty ? Color.secondary : Color.white.opacity(0.8))
                             .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                             .padding(6)
                     }
@@ -99,11 +99,11 @@ struct SidebarTileView: View {
     SidebarTileView(
         title: "Vacation Photos",
         count: 42,
-        imageURLs: [
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Light.heic"),
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Dark.heic"),
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Tree Dark.heic"),
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Big Sur Coastline.heic"),
+        samples: [
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Light.heic")),
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Dark.heic")),
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Tree Dark.heic")),
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Big Sur Coastline.heic")),
         ]
     )
     .frame(width: 140, height: 140)
@@ -113,11 +113,11 @@ struct SidebarTileView: View {
     SidebarTileView(
         title: "Vacation Photos",
         count: 42,
-        imageURLs: [
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Light.heic"),
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Dark.heic"),
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Tree Dark.heic"),
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Big Sur Coastline.heic"),
+        samples: [
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Light.heic")),
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Dark.heic")),
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Tree Dark.heic")),
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Big Sur Coastline.heic")),
         ],
         isSelected: true
     )
@@ -128,8 +128,8 @@ struct SidebarTileView: View {
     SidebarTileView(
         title: "Private",
         count: 12,
-        imageURLs: [
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Light.heic"),
+        samples: [
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Light.heic")),
         ],
         isPasswordProtected: true,
         isLocked: true
@@ -141,7 +141,7 @@ struct SidebarTileView: View {
     SidebarTileView(
         title: "Empty Folder",
         count: 0,
-        imageURLs: []
+        samples: []
     )
     .frame(width: 140, height: 140)
 }

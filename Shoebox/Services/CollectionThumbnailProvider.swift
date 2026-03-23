@@ -13,10 +13,27 @@
 // limitations under the License.
 
 import Foundation
+import CoreGraphics
+
+/// A sampled photo URL paired with its SmartCropper focus point.
+struct SamplePhoto: Identifiable, Equatable {
+    let url: URL
+    /// Normalized focus point in Vision coordinates (origin at bottom-left, 0…1).
+    /// `nil` until the focus point has been computed.
+    var focusPoint: CGPoint?
+
+    var id: String { url.absoluteString }
+
+    init(url: URL, focusPoint: CGPoint? = nil) {
+        self.url = url
+        self.focusPoint = focusPoint
+    }
+}
 
 /// Provides a small sample of image URLs for each collection, used to build
 /// collage previews in the sidebar. Caches results by collection ID and
-/// invalidates when the photo count changes.
+/// invalidates when the photo count changes. Computes SmartCropper focus
+/// points in the background.
 @MainActor
 class CollectionThumbnailProvider: ObservableObject {
     static let shared = CollectionThumbnailProvider()
@@ -25,21 +42,22 @@ class CollectionThumbnailProvider: ObservableObject {
     static let maxSampleCount = 9
 
     private struct CacheEntry {
-        let urls: [URL]
+        var samples: [SamplePhoto]
         let photoCount: Int
     }
 
     private var cache: [UUID: CacheEntry] = [:]
+    private var focusPointTasks: [UUID: Task<Void, Never>] = [:]
 
-    /// Returns up to `maxSampleCount` image URLs from the given collection,
+    /// Returns up to `maxSampleCount` sample photos from the given collection,
     /// resolving the security-scoped bookmark to access the folder.
-    func sampleURLs(
+    func samples(
         for collection: PhotoCollection,
         using manager: CollectionManager
-    ) -> [URL] {
+    ) -> [SamplePhoto] {
         // Return cached result if photo count hasn't changed
         if let entry = cache[collection.id], entry.photoCount == collection.photoCount {
-            return entry.urls
+            return entry.samples
         }
 
         guard let url = manager.resolveURL(for: collection) else { return [] }
@@ -52,24 +70,26 @@ class CollectionThumbnailProvider: ObservableObject {
             recursive: collection.recurseSubdirectories
         )
 
-        // Take a deterministic sample: spread evenly across the collection
-        let sample = Self.spreadSample(from: allURLs, count: Self.maxSampleCount)
+        let sampleURLs = Self.spreadSample(from: allURLs, count: Self.maxSampleCount)
+        let samples = sampleURLs.map { SamplePhoto(url: $0) }
 
-        let entry = CacheEntry(urls: sample, photoCount: collection.photoCount)
+        let entry = CacheEntry(samples: samples, photoCount: collection.photoCount)
         cache[collection.id] = entry
 
-        return sample
+        computeFocusPoints(for: collection.id, urls: sampleURLs)
+
+        return samples
     }
 
-    /// Returns up to `maxSampleCount` image URLs from the user's favorites.
-    func sampleURLs(
+    /// Returns up to `maxSampleCount` sample photos from the user's favorites.
+    func samples(
         forFavoriteIDs favoriteIDs: Set<String>,
         using manager: CollectionManager
-    ) -> [URL] {
+    ) -> [SamplePhoto] {
         let cacheID = CollectionManager.favoritesCollectionID
 
         if let entry = cache[cacheID], entry.photoCount == favoriteIDs.count {
-            return entry.urls
+            return entry.samples
         }
 
         // Access all collections to find favorite files
@@ -82,23 +102,65 @@ class CollectionThumbnailProvider: ObservableObject {
             favoriteURLs.append(contentsOf: matching)
         }
 
-        let sample = Self.spreadSample(from: favoriteURLs, count: Self.maxSampleCount)
+        let sampleURLs = Self.spreadSample(from: favoriteURLs, count: Self.maxSampleCount)
+        let samples = sampleURLs.map { SamplePhoto(url: $0) }
 
-        let entry = CacheEntry(urls: sample, photoCount: favoriteIDs.count)
+        let entry = CacheEntry(samples: samples, photoCount: favoriteIDs.count)
         cache[cacheID] = entry
 
-        return sample
+        computeFocusPoints(for: cacheID, urls: sampleURLs)
+
+        return samples
     }
 
     /// Invalidates the cached sample for a specific collection.
     func invalidate(collectionID: UUID) {
+        focusPointTasks[collectionID]?.cancel()
+        focusPointTasks.removeValue(forKey: collectionID)
         cache.removeValue(forKey: collectionID)
     }
 
     /// Invalidates all cached samples.
     func invalidateAll() {
+        for task in focusPointTasks.values { task.cancel() }
+        focusPointTasks.removeAll()
         cache.removeAll()
     }
+
+    // MARK: - Focus Point Computation
+
+    /// Computes SmartCropper focus points for the given URLs in the background,
+    /// updating the cache as results arrive.
+    private func computeFocusPoints(for collectionID: UUID, urls: [URL]) {
+        focusPointTasks[collectionID]?.cancel()
+
+        focusPointTasks[collectionID] = Task.detached(priority: .background) {
+            for url in urls {
+                if Task.isCancelled { return }
+                // Yield to avoid starving the image indexer, which also
+                // uses Vision on the cooperative thread pool.
+                await Task.yield()
+
+                guard let cgImage = ThumbnailGenerator.createThumbnail(
+                    from: url,
+                    maxPixelSize: 200
+                ) else { continue }
+
+                let point = SmartCropper.focusPoint(for: cgImage)
+
+                await MainActor.run {
+                    guard var entry = self.cache[collectionID] else { return }
+                    if let idx = entry.samples.firstIndex(where: { $0.url == url }) {
+                        entry.samples[idx].focusPoint = point
+                        self.cache[collectionID] = entry
+                        self.objectWillChange.send()
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Sampling
 
     /// Picks up to `count` items spread evenly across the source array.
     /// This gives a representative sample rather than just the first N items.

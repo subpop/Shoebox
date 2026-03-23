@@ -14,10 +14,11 @@
 
 import SwiftUI
 
-/// A collage of square-cropped photo thumbnails arranged in a tight grid.
-/// Used as a background for sidebar collection items in both list and grid modes.
+/// A collage of photo thumbnails arranged in a tight grid.
+/// Each cell uses the SmartCropper focus point to align the most interesting
+/// part of the image within the square crop.
 struct CollageView: View {
-    let imageURLs: [URL]
+    let samples: [SamplePhoto]
     var gridSize: Int = 2
     var thumbnailSize: CGSize = CGSize(width: 150, height: 150)
     /// Changing this value forces all cells to reload their thumbnails.
@@ -26,13 +27,13 @@ struct CollageView: View {
     /// How many cells the grid contains.
     private var cellCount: Int { gridSize * gridSize }
 
-    /// The URLs to actually display, capped to the grid capacity.
-    private var displayURLs: [URL] {
-        Array(imageURLs.prefix(cellCount))
+    /// The samples to actually display, capped to the grid capacity.
+    private var displaySamples: [SamplePhoto] {
+        Array(samples.prefix(cellCount))
     }
 
     var body: some View {
-        if displayURLs.isEmpty {
+        if displaySamples.isEmpty {
             Rectangle().fill(.quaternary.opacity(0.5))
         } else {
             GeometryReader { geometry in
@@ -44,10 +45,15 @@ struct CollageView: View {
                         HStack(spacing: 0) {
                             ForEach(0..<gridSize, id: \.self) { col in
                                 let index = row * gridSize + col
-                                let url = displayURLs[index % displayURLs.count]
-                                CollageCellView(url: url, thumbnailSize: thumbnailSize, refreshID: refreshID)
-                                    .frame(width: cellWidth, height: cellHeight)
-                                    .clipped()
+                                let sample = displaySamples[index % displaySamples.count]
+                                CollageCellView(
+                                    url: sample.url,
+                                    focusPoint: sample.focusPoint,
+                                    thumbnailSize: thumbnailSize,
+                                    refreshID: refreshID
+                                )
+                                .frame(width: cellWidth, height: cellHeight)
+                                .clipped()
                             }
                         }
                     }
@@ -58,9 +64,11 @@ struct CollageView: View {
 }
 
 /// A single cell in the collage that loads a thumbnail asynchronously and
-/// displays it with aspect-fill cropping.
+/// displays it cropped around the SmartCropper focus point.
 private struct CollageCellView: View {
     let url: URL
+    /// Normalized focus point in Vision coordinates (origin at bottom-left, 0…1).
+    let focusPoint: CGPoint?
     let thumbnailSize: CGSize
     var refreshID: Int = 0
     @State private var image: NSImage?
@@ -71,13 +79,40 @@ private struct CollageCellView: View {
     }
 
     var body: some View {
-        ZStack {
-            Rectangle().fill(.quaternary.opacity(0.3))
+        GeometryReader { geo in
+            ZStack {
+                Rectangle().fill(.quaternary.opacity(0.3))
 
-            if let image {
-                Image(nsImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
+                if let image {
+                    let imgSize = image.size
+                    let scale = max(
+                        geo.size.width / imgSize.width,
+                        geo.size.height / imgSize.height
+                    )
+                    let scaledW = imgSize.width * scale
+                    let scaledH = imgSize.height * scale
+
+                    // Convert Vision focus point (bottom-left origin) to SwiftUI (top-left)
+                    let fpX = focusPoint?.x ?? 0.5
+                    let fpY = 1.0 - (focusPoint?.y ?? 0.5)
+
+                    // Offset so the focus point sits at the center of the cell
+                    let rawOffsetX = (0.5 - fpX) * scaledW
+                    let rawOffsetY = (0.5 - fpY) * scaledH
+
+                    // Clamp so we don't expose empty space
+                    let maxOffsetX = (scaledW - geo.size.width) / 2
+                    let maxOffsetY = (scaledH - geo.size.height) / 2
+                    let clampedX = max(-maxOffsetX, min(maxOffsetX, rawOffsetX))
+                    let clampedY = max(-maxOffsetY, min(maxOffsetY, rawOffsetY))
+
+                    Image(nsImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: scaledW, height: scaledH)
+                        .offset(x: clampedX, y: clampedY)
+                        .frame(width: geo.size.width, height: geo.size.height)
+                }
             }
         }
         .task(id: taskID) {
@@ -94,11 +129,11 @@ private struct CollageCellView: View {
 
 #Preview("Collage 2x2") {
     CollageView(
-        imageURLs: [
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Light.heic"),
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Dark.heic"),
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Tree Dark.heic"),
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Big Sur Coastline.heic"),
+        samples: [
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Light.heic")),
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Dark.heic")),
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Tree Dark.heic")),
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Big Sur Coastline.heic")),
         ],
         gridSize: 2
     )
@@ -108,11 +143,11 @@ private struct CollageCellView: View {
 
 #Preview("Collage 3x3") {
     CollageView(
-        imageURLs: [
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Light.heic"),
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Dark.heic"),
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Tree Dark.heic"),
-            URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Big Sur Coastline.heic"),
+        samples: [
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Light.heic")),
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Dome Dark.heic")),
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Tree Dark.heic")),
+            SamplePhoto(url: URL(fileURLWithPath: "/System/Library/Desktop Pictures/.thumbnails/Big Sur Coastline.heic")),
         ],
         gridSize: 3
     )
@@ -121,7 +156,7 @@ private struct CollageCellView: View {
 }
 
 #Preview("Collage - Empty") {
-    CollageView(imageURLs: [], gridSize: 2)
+    CollageView(samples: [], gridSize: 2)
         .frame(width: 200, height: 200)
         .clipShape(RoundedRectangle(cornerRadius: 12))
 }
