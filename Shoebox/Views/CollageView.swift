@@ -14,113 +14,51 @@
 
 import SwiftUI
 
-/// A collage of photo thumbnails arranged in a tight grid.
-/// Each cell uses the SmartCropper focus point to align the most interesting
-/// part of the image within the square crop.
+/// A collage of photo thumbnails composited into a single cached image.
+/// Uses SmartCropper focus points to align the most interesting part of
+/// each photo within its grid cell during compositing.
 struct CollageView: View {
     let samples: [SamplePhoto]
     var gridSize: Int = 2
     var thumbnailSize: CGSize = CGSize(width: 150, height: 150)
-    /// Changing this value forces all cells to reload their thumbnails.
+    /// Changing this value forces the composite to regenerate.
     var refreshID: Int = 0
 
-    /// How many cells the grid contains.
-    private var cellCount: Int { gridSize * gridSize }
-
-    /// The samples to actually display, capped to the grid capacity.
-    private var displaySamples: [SamplePhoto] {
-        Array(samples.prefix(cellCount))
+    /// Task identity that triggers re-compositing when inputs change.
+    private var taskID: String {
+        let urls = samples.prefix(gridSize * gridSize).map(\.url.absoluteString).joined(separator: ",")
+        let fps = samples.prefix(gridSize * gridSize).map { s in
+            s.focusPoint.map { "\($0.x),\($0.y)" } ?? "nil"
+        }.joined(separator: ",")
+        return "\(urls)|\(fps)|\(gridSize)|\(refreshID)"
     }
 
+    @State private var compositeImage: NSImage?
+
     var body: some View {
-        if displaySamples.isEmpty {
+        if samples.isEmpty {
             Rectangle().fill(.quaternary.opacity(0.5))
         } else {
             GeometryReader { geometry in
-                let cellWidth = geometry.size.width / CGFloat(gridSize)
-                let cellHeight = geometry.size.height / CGFloat(gridSize)
+                ZStack {
+                    Rectangle().fill(.quaternary.opacity(0.3))
 
-                VStack(spacing: 0) {
-                    ForEach(0..<gridSize, id: \.self) { row in
-                        HStack(spacing: 0) {
-                            ForEach(0..<gridSize, id: \.self) { col in
-                                let index = row * gridSize + col
-                                let sample = displaySamples[index % displaySamples.count]
-                                CollageCellView(
-                                    url: sample.url,
-                                    focusPoint: sample.focusPoint,
-                                    thumbnailSize: thumbnailSize,
-                                    refreshID: refreshID
-                                )
-                                .frame(width: cellWidth, height: cellHeight)
-                                .clipped()
-                            }
-                        }
+                    if let compositeImage {
+                        Image(nsImage: compositeImage)
+                            .resizable()
+                            .interpolation(.high)
+                            .frame(width: geometry.size.width, height: geometry.size.height)
                     }
                 }
-            }
-        }
-    }
-}
-
-/// A single cell in the collage that loads a thumbnail asynchronously and
-/// displays it cropped around the SmartCropper focus point.
-private struct CollageCellView: View {
-    let url: URL
-    /// Normalized focus point in Vision coordinates (origin at bottom-left, 0…1).
-    let focusPoint: CGPoint?
-    let thumbnailSize: CGSize
-    var refreshID: Int = 0
-    @State private var image: NSImage?
-
-    /// Combined identity so the task re-fires on URL change or cache clear.
-    private var taskID: String {
-        "\(url.absoluteString)-\(refreshID)"
-    }
-
-    var body: some View {
-        GeometryReader { geo in
-            ZStack {
-                Rectangle().fill(.quaternary.opacity(0.3))
-
-                if let image {
-                    let imgSize = image.size
-                    let scale = max(
-                        geo.size.width / imgSize.width,
-                        geo.size.height / imgSize.height
+                .task(id: taskID) {
+                    compositeImage = nil
+                    compositeImage = await ThumbnailCache.shared.compositeCollage(
+                        samples: Array(samples.prefix(gridSize * gridSize)),
+                        gridSize: gridSize,
+                        totalSize: geometry.size
                     )
-                    let scaledW = imgSize.width * scale
-                    let scaledH = imgSize.height * scale
-
-                    // Convert Vision focus point (bottom-left origin) to SwiftUI (top-left)
-                    let fpX = focusPoint?.x ?? 0.5
-                    let fpY = 1.0 - (focusPoint?.y ?? 0.5)
-
-                    // Offset so the focus point sits at the center of the cell
-                    let rawOffsetX = (0.5 - fpX) * scaledW
-                    let rawOffsetY = (0.5 - fpY) * scaledH
-
-                    // Clamp so we don't expose empty space
-                    let maxOffsetX = (scaledW - geo.size.width) / 2
-                    let maxOffsetY = (scaledH - geo.size.height) / 2
-                    let clampedX = max(-maxOffsetX, min(maxOffsetX, rawOffsetX))
-                    let clampedY = max(-maxOffsetY, min(maxOffsetY, rawOffsetY))
-
-                    Image(nsImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: scaledW, height: scaledH)
-                        .offset(x: clampedX, y: clampedY)
-                        .frame(width: geo.size.width, height: geo.size.height)
                 }
             }
-        }
-        .task(id: taskID) {
-            image = nil
-            image = await ThumbnailCache.shared.thumbnail(
-                for: url,
-                size: thumbnailSize
-            )
         }
     }
 }
