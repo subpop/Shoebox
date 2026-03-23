@@ -44,6 +44,9 @@ class CollectionThumbnailProvider: ObservableObject {
     private struct CacheEntry {
         var samples: [SamplePhoto]
         let photoCount: Int
+        /// Whether the app was locked when this entry was created.
+        /// Used to invalidate favorites samples on lock/unlock transitions.
+        var wasLocked: Bool = false
     }
 
     private var cache: [UUID: CacheEntry] = [:]
@@ -82,18 +85,26 @@ class CollectionThumbnailProvider: ObservableObject {
     }
 
     /// Returns up to `maxSampleCount` sample photos from the user's favorites.
+    /// When the app is locked, photos from password-protected collections are
+    /// excluded so they don't leak into the Favorites collage.
     func samples(
         forFavoriteIDs favoriteIDs: Set<String>,
         using manager: CollectionManager
     ) -> [SamplePhoto] {
         let cacheID = CollectionManager.favoritesCollectionID
+        let locked = manager.isLocked
 
-        if let entry = cache[cacheID], entry.photoCount == favoriteIDs.count {
+        if let entry = cache[cacheID],
+           entry.photoCount == favoriteIDs.count,
+           entry.wasLocked == locked {
             return entry.samples
         }
 
-        // Access all collections to find favorite files
-        let sources = manager.startAccessingAll()
+        // When locked, skip password-protected collections so their photos
+        // don't appear in the Favorites collage.
+        let sources = locked
+            ? manager.startAccessingUnprotected()
+            : manager.startAccessingAll()
         var favoriteURLs: [URL] = []
 
         for source in sources {
@@ -105,7 +116,8 @@ class CollectionThumbnailProvider: ObservableObject {
         let sampleURLs = Self.spreadSample(from: favoriteURLs, count: Self.maxSampleCount)
         let samples = sampleURLs.map { SamplePhoto(url: $0) }
 
-        let entry = CacheEntry(samples: samples, photoCount: favoriteIDs.count)
+        var entry = CacheEntry(samples: samples, photoCount: favoriteIDs.count)
+        entry.wasLocked = locked
         cache[cacheID] = entry
 
         computeFocusPoints(for: cacheID, urls: sampleURLs)
