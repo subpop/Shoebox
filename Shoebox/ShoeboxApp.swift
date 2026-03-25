@@ -18,13 +18,14 @@ import SwiftUI
 struct ShoeboxApp: App {
     @StateObject private var collectionManager = CollectionManager()
     @StateObject private var favoritesManager = FavoritesManager()
+    @Environment(\.openWindow) private var openWindow
 
     init() {
         NSWindow.allowsAutomaticWindowTabbing = false
     }
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "main") {
             ContentView()
                 .environmentObject(collectionManager)
                 .environmentObject(favoritesManager)
@@ -38,6 +39,18 @@ struct ShoeboxApp: App {
                 .keyboardShortcut("o")
             }
             SidebarCommands()
+            CommandGroup(after: .singleWindowList) {
+                Button("Shoebox", systemImage: "macwindow") {
+                    if let window = NSApplication.shared.windows.first(where: { $0.canBecomeMain }) {
+                        window.deminiaturize(nil)
+                        window.makeKeyAndOrderFront(nil)
+                        NSApplication.shared.activate()
+                    } else {
+                        openWindow(id: "main")
+                    }
+                }
+                .keyboardShortcut("0")
+            }
             CommandGroup(after: .help) {
                 Button("Provide Feedback...") {
                     let url = URL(string: "https://github.com/subpop/Shoebox/issues")!
